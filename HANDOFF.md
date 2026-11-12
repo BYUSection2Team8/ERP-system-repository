@@ -71,7 +71,7 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Rubric saved (`RUBRIC.md`)
 - [x] Git repo connected to GitHub
 - [x] Phase 0 — Setup (live at https://byusection2team8.github.io/ERP-system-repository/ ; staff sign-in verified 2026-11-12)
-- [ ] Phase 1 — Database schema
+- [ ] Phase 1 — Database schema (code done, CI database tests green 2026-11-12; **apply in Supabase** = manual steps below, then tick)
 - [ ] Phase 2 — Starter seed data
 - [ ] Phase 3 — Inventory + Barcodes
 - [ ] Phase 4 — POS + Sales Orders
@@ -83,8 +83,27 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [ ] Phase 10 — Wow factors (stretch)
 - [ ] Phase 11 — Polish + demo prep
 
-**Next step:** Phase 1 — Database schema. Start a fresh AI session: "Read HANDOFF.md and do Phase 1."
-Phase 1 delivers SQL migration files in `supabase/migrations/`; a human pastes each into Supabase → SQL Editor → Run (no database password needed).
+**Next step:** a human applies the Phase 1 migrations in Supabase (steps below), then Phase 2 — Starter seed data. Start a fresh AI session: "Read HANDOFF.md and do Phase 2."
+
+### Phase 1 manual steps (a human does these once)
+
+1. Supabase → **SQL Editor** → New query. Paste each file from `supabase/migrations/` **in number order** (`001_schema.sql` … `006_realtime.sql`) and click **Run**. Each should say "Success. No rows returned."
+2. Paste `supabase/tests/smoke_core.sql` and Run. The output should end with **ALL PHASE 1 CHECKS PASSED** (it rolls back, so nothing is left behind). Then the same with `supabase/tests/rls_check.sql` → **ALL RLS CHECKS PASSED**.
+3. Supabase → Authentication → Sign In / Providers → turn **off** "Allow new users to sign up" (staff and portal logins are created by us). Even if left on, new sign-ups are only `customer` with no data access.
+4. Every user that existed when `002_security.sql` ran became **staff** (the Phase 0 login). To make a later user staff: SQL Editor → `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`
+
+### Database design (Phase 1) — read this before writing screens
+
+- **Migrations:** `001_schema` tables · `002_security` roles + RLS · `003_calc_views` shared calculations + views · `004_functions` business functions · `005_reference_data` settings, chart of accounts, reason codes, 4 locations · `006_realtime` publication. CI (`.github/workflows/db-test.yml`) applies them all to a fresh Postgres 17 and runs `supabase/tests/*.sql` on every push that touches `supabase/`. Supabase stand-in for CI: `supabase/tests/ci_supabase_stub.sql` (never run that one in Supabase).
+- **Stock** = `inventory_txn` rows (signed qty in stock units: `ea` or grams). On hand = `v_availability` / `v_stock_on_hand`. **Cost** = moving weighted average per item across locations, `item_unit_cost(item)`; valuation `v_inventory_valuation`.
+- **Money** = `journals` + `ledger` (balanced debits/credits). Accounts 1000 Cash, 1100 A/R, 1200 Inventory, 1250 WIP, 2000 A/P, 2100 Sales tax, 2300 Accrued production labor & machine, 3000 Equity, 4000 Sales, 4100 Discounts, 4200 Shipping rev, 4300 Restocking fees, 4400 Sales returns, 5000 COGS, 5100 Packaging, 5200 Inventory adjustments, 5300 Production scrap. Balances: `v_account_balances`.
+- **Business functions** (call with `supabase.rpc`): `receive_opening_inventory`, `transfer_inventory`, `adjust_inventory`, `count_inventory`, `create_sales_order`, `fulfill_sales_order`, `close_sales_order`, `cancel_sales_order`, `pos_sale`, `process_return`, `create_production_order`, `issue_production_order`, `complete_production_order`, `cancel_production_order`, `create_purchase_order`, `send_purchase_order`, `receive_purchase_order`, `close_purchase_order`, `cancel_purchase_order`, `record_supplier_payment`. Parameters are documented in comments above each function in `004_functions.sql`. Every one takes an optional timestamp so Phase 6 can backdate history. Errors are plain-English messages meant to be shown to the user.
+- **Locations by code:** `PRINT_FARM`, `FULFILLMENT`, `CAMPUS`, `QA_HOLD` (not sellable). POS defaults to CAMPUS; shipped orders default to FULFILLMENT; production consumes at PRINT_FARM and outputs to FULFILLMENT.
+- **BOMs are per plate**; `items.units_per_plate` converts (`v_bom_per_unit`). Production starts whole plates: qty started = plates × units per plate. Rolled-up cost: `item_standard_cost(item)` / `v_item_standard_cost`.
+- **Filament:** item uom `g`; supplier price list (`item_suppliers`) says purchase unit `spool` = 985 g. PO quantities are in spools; stock is in grams.
+- **Rules built in:** no negative stock (setting `allow_negative_inventory`); fulfillment fails as a whole if any line is short (order stays `placed` = backorder, see `v_backorders` with estimated date); one discount per order (BYU / business 25+ / manual with reason, max 50%); tax only for UT; flat shipping on shipped orders; flat packaging cost expensed on shipped + pickup orders; returns within 30 days; quality reasons → QA Hold, full refund; "changed my mind" refund of made-to-order → 10% restocking fee; exchanges create a new order with the same discount and no shipping; paid-at-purchase suppliers are paid automatically on receipt; on-account (Net 30) customer orders hit A/R and are paid when the order is closed.
+- **Security:** anon gets nothing. Staff read everything and edit master data tables directly; transaction tables can only change through the functions. Customers read products, locations, settings and their own customer row/orders. Portal ordering functions come in Phase 9.
+- **Not built yet (later phases):** ROP/EOQ/MRP/scorecard calculations (Phases 5, 7), P&L/turnover views (Phase 8), portal functions (Phase 9). Packaging uses the flat setting; boxes bought on POs are not yet consumed per order (stretch: box selection).
 
 ### Gotchas learned in Phase 0
 
@@ -135,3 +154,4 @@ The builder's computer does **not** have Node.js. GitHub Actions installs, type-
 - **2026-11-12** — Connected local folder to GitHub. Added `RUBRIC.md`, `SPEC.md` (text copy of the PDF spec), and this handoff with the phased plan. No app code yet. Moved the 60 customers and 6-month history out of the first seed into their own later phase (now Phase 6). Switched to a lean-core build: core vs. stretch table added to `SPEC.md`, extension points added here, wow factors deferred to Phase 10.
 - **2026-11-12** — Phase 0 code: Vite + React + TS skeleton, Supabase sign-in, sidebar layout driven by route registry, About page, GitHub Actions deploy to Pages. Built without local Node.js (CI builds). Not yet verified live: waiting on repo visibility, Pages setting, secrets and a Supabase staff user.
 - **2026-11-12** — Phase 0 complete. Pages enabled, secrets added, workflow actions bumped to v5/v4 (Node 24 warning), CI secret check added, URL path-stripping fix. Staff sign-in works on the live site.
+- **2026-11-12** — Phase 1 code: 6 migrations (schema, RLS, calc views, 20 business functions, reference data, realtime) plus CI database tests that apply them to Postgres 17 and check every function's numbers by hand-calculated examples (all green on first CI run). Not yet applied to Supabase: waiting on the Phase 1 manual steps.
