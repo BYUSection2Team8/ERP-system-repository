@@ -55,3 +55,14 @@ jobs:
 
       - name: Row-level security test
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_check.sql
+
+      # The SQL Editor sends a whole paste as ONE batch, so test the paste files that way
+      # on a second, empty database.
+      - name: Paste files work as single batches (like the Supabase SQL Editor)
+        run: |
+          bash supabase/make_paste_files.sh
+          psql -q -c "create database pastetest"
+          export PGDATABASE=pastetest
+          psql -v ON_ERROR_STOP=1 -q -f supabase/tests/ci_supabase_stub.sql
+          psql -v ON_ERROR_STOP=1 -c "$(cat supabase/paste/1_setup_database.sql)"
+          psql -v ON_ERROR_STOP=1 -c "$(cat supabase/paste/2_run_checks.sql)"

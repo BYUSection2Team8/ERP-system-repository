@@ -1,9 +1,12 @@
 -- CI ONLY — do NOT run in Supabase.
 -- Recreates the small parts of Supabase the migrations rely on, so GitHub
 -- Actions can test the migrations on a plain Postgres server.
-create role anon nologin;
-create role authenticated nologin;
-create role service_role nologin bypassrls;
+-- Roles are shared by every database on the server, so create them only once.
+do $$ begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
+end $$;
 
 create schema auth;
 create table auth.users (
