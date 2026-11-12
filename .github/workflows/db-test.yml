@@ -1,0 +1,46 @@
+name: Database tests
+
+# Applies every migration to a fresh Postgres and runs the SQL test scripts,
+# so database changes are verified without anyone installing Postgres locally.
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/db-test.yml']
+  pull_request:
+    paths: ['supabase/**']
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci-only-throwaway
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: ci-only-throwaway
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Stand-in for Supabase (roles, auth schema, realtime publication)
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/tests/ci_supabase_stub.sql
+
+      - name: Apply migrations in order
+        run: |
+          for f in supabase/migrations/*.sql; do
+            echo "== $f"
+            psql -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+
+      - name: Smoke test (every business function, numbers checked)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/smoke_core.sql
+
+      - name: Row-level security test
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_check.sql
