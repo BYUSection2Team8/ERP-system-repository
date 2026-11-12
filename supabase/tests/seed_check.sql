@@ -17,14 +17,15 @@ begin
   assert (select count(*) from customers) >= 5, '5 customers';
   assert (select count(*) from locations) = 4, '3 locations + QA Hold';
   assert not exists (select 1 from items where barcode is null or barcode = ''), 'every item has a barcode';
+  assert (select max(length(barcode)) from items) <= 14, 'barcodes fit on a 2-5/8 inch label (14 characters max)';
   assert not exists (select 1 from items i where item_type = 'purchased'
                       and not exists (select 1 from item_suppliers s where s.item_id = i.id and s.is_preferred)),
     'every purchased item has a preferred supplier price';
 
   -- Rolled-up unit cost vs the BOM table in SPEC.md (within 5 cents).
   for r in select * from (values
-      ('DRG-RED', 1.07), ('KEY-BLUEWHITE', 0.93), ('SPN-BLUE', 2.85), ('ORN-WHITE', 1.44),
-      ('TMP-WHITE', 6.65), ('ARM-BLACK', 9.98), ('AIR-MULTICOLOR', 10.37), ('BYU-BLUE', 2.31),
+      ('DRG-RED', 1.07), ('KEY-BW', 0.93), ('SPN-BLUE', 2.85), ('ORN-WHITE', 1.44),
+      ('TMP-WHITE', 6.65), ('ARM-BLACK', 9.98), ('AIR-MC', 10.37), ('BYU-BLUE', 2.31),
       ('MAG-RED', 10.69)) as x(sku, spec_cost)
   loop
     assert abs((select total_cost from v_item_standard_cost where sku = r.sku) - r.spec_cost) <= 0.05,

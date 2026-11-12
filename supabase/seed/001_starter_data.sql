@@ -21,6 +21,7 @@ declare
   v_cp uuid := (select id from locations where code = 'CAMPUS');
   s_hl uuid; s_bl uuid; s_ul uuid; s_am uuid; s_kj uuid; s_vx uuid; s_vp uuid;
   c text;
+  v_suffix text;
   colors text[] := array['Red','White','Blue','Black'];
   v_parent uuid;
   r record;
@@ -92,27 +93,29 @@ begin
   create temp table _products (
     code text, name text, colors text[], units_per_plate int, print_min numeric, assembly_min numeric,
     price numeric, policy text, season_start text, season_end text, lead_days int,
-    l numeric, w numeric, h numeric, box text, packing text, grams numeric
+    l numeric, w numeric, h numeric, box text, packing text, grams numeric, suffixes text[]
   ) on commit drop;
   insert into _products values
-    ('DRG', 'Dragon',               colors,  1,  69,  0, 8.99,  'stock',         null,    null,    1, 4,  2, 1.5,  'small',  'standard',    10.43),
-    ('SPN', 'Fidget Spinner',       colors,  1,  45,  3, 7.99,  'stock',         null,    null,    1, 3,  3, 0.5,  'small',  'standard',    18),
-    ('ORN', 'Christmas Ornament',   colors,  1,  50,  1, 7.99,  'seasonal',      '11-01', '12-31', 1, 3,  3, 0.5,  'small',  'standard',    12),
-    ('TMP', 'Temple LED Tealight',  colors,  1, 305, 10, 27.99, 'make_to_order', null,    null,    2, 4,  4, 5,    'medium', 'fragile',     58.36),
-    ('ARM', 'Army Soldiers (lot of 10)', colors, 1, 180, 20, 19.99, 'make_to_order', null, null, 1, 5,  3, 2,    'small',  'multi_piece', 27.7),
-    ('BYU', 'BYU Logo',             colors,  1, 104,  0, 14.99, 'make_to_order', null,    null,    1, 7,  5, 0.75, 'medium', 'standard',    84.44),
-    ('MAG', 'Magnet Alphabet Set',  colors,  1, 119, 20, 22.99, 'make_to_order', null,    null,    1, 5,  4, 1.5,  'small',  'multi_piece', 41.52),
-    ('KEY', 'Keychain',             array['Blue/White'], 10, 188, 20, 4.99, 'stock', null, null, 1, 2,  1, 0.25, 'small',  'small',       null),
-    ('AIR', 'Airplane',             array['Multicolor'],  1, 469, 15, 39.99, 'make_to_order', null, null, 2, 10, 9, 3, 'large', 'fragile',     null);
+    ('DRG', 'Dragon',               colors,  1,  69,  0, 8.99,  'stock',         null,    null,    1, 4,  2, 1.5,  'small',  'standard',    10.43, null),
+    ('SPN', 'Fidget Spinner',       colors,  1,  45,  3, 7.99,  'stock',         null,    null,    1, 3,  3, 0.5,  'small',  'standard',    18, null),
+    ('ORN', 'Christmas Ornament',   colors,  1,  50,  1, 7.99,  'seasonal',      '11-01', '12-31', 1, 3,  3, 0.5,  'small',  'standard',    12, null),
+    ('TMP', 'Temple LED Tealight',  colors,  1, 305, 10, 27.99, 'make_to_order', null,    null,    2, 4,  4, 5,    'medium', 'fragile',     58.36, null),
+    ('ARM', 'Army Soldiers (lot of 10)', colors, 1, 180, 20, 19.99, 'make_to_order', null, null, 1, 5,  3, 2,    'small',  'multi_piece', 27.7, null),
+    ('BYU', 'BYU Logo',             colors,  1, 104,  0, 14.99, 'make_to_order', null,    null,    1, 7,  5, 0.75, 'medium', 'standard',    84.44, null),
+    ('MAG', 'Magnet Alphabet Set',  colors,  1, 119, 20, 22.99, 'make_to_order', null,    null,    1, 5,  4, 1.5,  'small',  'multi_piece', 41.52, null),
+    ('KEY', 'Keychain',             array['Blue/White'], 10, 188, 20, 4.99, 'stock', null, null, 1, 2,  1, 0.25, 'small',  'small',       null, array['BW']),
+    ('AIR', 'Airplane',             array['Multicolor'],  1, 469, 15, 39.99, 'make_to_order', null, null, 2, 10, 9, 3, 'large', 'fragile',     null, array['MC']);
 
   for r in select * from _products loop
     foreach c in array r.colors loop
+      -- Short suffix keeps barcodes narrow enough for a 2-5/8" label (KEY-BW, AIR-MC).
+      v_suffix := coalesce(r.suffixes[1], upper(c));
       insert into items (sku, barcode, name, item_type, category, product_family, color, uom, price,
                          stocking_policy, season_start, season_end, units_per_plate, print_minutes,
                          assembly_minutes, color_changes, lead_time_days, packing_class, box_size,
                          length_in, width_in, height_in)
-      values (r.code || '-' || upper(replace(c, '/', '')),
-              'PP-' || r.code || '-' || upper(replace(c, '/', '')),
+      values (r.code || '-' || v_suffix,
+              'PP-' || r.code || '-' || v_suffix,
               r.name || ' - ' || c, 'finished', 'product', r.name, c, 'ea', r.price,
               r.policy, r.season_start, r.season_end, r.units_per_plate, r.print_min,
               r.assembly_min, case when r.code in ('KEY','AIR') then 1 else 0 end, r.lead_days,

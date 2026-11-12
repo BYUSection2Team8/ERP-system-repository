@@ -13,24 +13,24 @@ const sectionOrder: AppRoute['section'][] = [
 ];
 
 export function Layout() {
-  const { session, signOut } = useAuth();
+  const { session, fullName, role, signOut } = useAuth();
 
   return (
     <div className="shell">
-      <aside className="sidebar">
+      <aside className="sidebar no-print">
         <div className="sidebar-brand">
           <Logo size={32} />
           <span>Poulson Prints</span>
         </div>
         <nav>
           {sectionOrder.map((section) => {
-            const items = routes.filter((r) => r.section === section);
+            const items = routes.filter((r) => r.section === section && !r.hidden);
             if (items.length === 0) return null;
             return (
               <div key={section} className="nav-section">
                 <div className="nav-heading">{section}</div>
                 {items.map((r) => (
-                  <NavLink key={r.path} to={r.path} end={r.path === '/'} className="nav-link">
+                  <NavLink key={r.path} to={r.path} end className="nav-link">
                     {r.label}
                   </NavLink>
                 ))}
@@ -40,8 +40,11 @@ export function Layout() {
         </nav>
       </aside>
       <div className="main">
-        <header className="topbar">
-          <span className="muted">{session?.user.email}</span>
+        <header className="topbar no-print">
+          {role === 'unknown' && (
+            <span className="badge warn">No profile found: apply the database migrations</span>
+          )}
+          <span className="muted">{fullName ?? session?.user.email}</span>
           <button className="btn" onClick={signOut}>
             Sign out
           </button>
