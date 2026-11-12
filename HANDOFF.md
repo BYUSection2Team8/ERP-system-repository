@@ -71,9 +71,9 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Rubric saved (`RUBRIC.md`)
 - [x] Git repo connected to GitHub
 - [x] Phase 0 — Setup (live at https://byusection2team8.github.io/ERP-system-repository/ ; staff sign-in verified 2026-11-12)
-- [ ] Phase 1 — Database schema (code done, CI database tests green 2026-11-12; **apply in Supabase** = manual steps below, then tick)
-- [ ] Phase 2 — Starter seed data (code done, CI seed check green; **apply in Supabase** = manual step 2 below)
-- [ ] Phase 3 — Inventory + Barcodes (code done, builds in CI; **check on the live site** once the database is applied, then tick)
+- [x] Phase 1 — Database schema (applied in Supabase via the paste files; all checks passed)
+- [x] Phase 2 — Starter seed data (applied in Supabase; seed check passed)
+- [x] Phase 3 — Inventory + Barcodes (live-site checklist passed)
 - [ ] Phase 4 — POS + Sales Orders
 - [ ] Phase 5 — Production + MRP
 - [ ] Phase 6 — Full customers + 6-month history
@@ -83,7 +83,9 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [ ] Phase 10 — Wow factors (stretch)
 - [ ] Phase 11 — Polish + demo prep
 
-**Next step:** a human applies the database in Supabase (steps below) and checks the Phase 3 screens on the live site (checklist below). Then Phase 4 — POS + Sales Orders. Start a fresh AI session: "Read HANDOFF.md and do Phase 4."
+**Next step:** Phase 4 — POS + Sales Orders. Start a fresh AI session: "Read HANDOFF.md and do Phase 4."
+Database changes from now on: add a new numbered migration, run `bash supabase/make_paste_files.sh`, and paste only the NEW migration into the SQL Editor (Paste 1 is for an empty database). Paste 2 (checks) can be re-run any time.
+New staff logins: add the user in Supabase → Authentication → Users (tick Auto Confirm), then SQL Editor: `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`. Logins created after setup start as `customer`.
 
 ### Database manual steps (a human does these once, in this order)
 
@@ -184,3 +186,4 @@ The builder's computer does **not** have Node.js. GitHub Actions installs, type-
 - **2026-11-12** — Phase 0 complete. Pages enabled, secrets added, workflow actions bumped to v5/v4 (Node 24 warning), CI secret check added, URL path-stripping fix. Staff sign-in works on the live site.
 - **2026-11-12** — Phase 1 code: 6 migrations (schema, RLS, calc views, 20 business functions, reference data, realtime) plus CI database tests that apply them to Postgres 17 and check every function's numbers by hand-calculated examples (all green on first CI run). Not yet applied to Supabase: waiting on the Phase 1 manual steps.
 - **2026-11-12** — Phase 2 code: starter seed (48 items, BOMs, 7 suppliers, 5 customers, opening stock posted as transactions) + `seed_check.sql` in CI (green; seed is safe to re-run). Phase 3 code: inventory list, item detail with movements and rolled-up cost, transfers, adjustments/cycle counts with reason codes, backorders with estimated dates, Code 128 label sheet, camera + USB scanning, Realtime refresh, dashboard KPIs. Builds in CI; not yet tried against the real database (migrations not applied yet).
+- **2026-11-12** — Database applied in Supabase with the two paste files (`supabase/make_paste_files.sh` builds them; CI tests them as single batches like the SQL Editor). All checks passed; Phase 3 live-site checklist passed. Phases 1–3 complete.
