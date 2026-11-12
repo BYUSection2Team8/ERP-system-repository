@@ -70,7 +70,7 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Spec written (`SPEC.md`, PDF in repo)
 - [x] Rubric saved (`RUBRIC.md`)
 - [x] Git repo connected to GitHub
-- [ ] Phase 0 — Setup (code written and pushed; waiting on the manual GitHub/Supabase steps below, then verify login on the live site)
+- [x] Phase 0 — Setup (live at https://byusection2team8.github.io/ERP-system-repository/ ; staff sign-in verified 2026-11-12)
 - [ ] Phase 1 — Database schema
 - [ ] Phase 2 — Starter seed data
 - [ ] Phase 3 — Inventory + Barcodes
@@ -83,7 +83,16 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [ ] Phase 10 — Wow factors (stretch)
 - [ ] Phase 11 — Polish + demo prep
 
-**Next step:** finish Phase 0's manual steps (below), confirm sign-in works on the live site, then Phase 1.
+**Next step:** Phase 1 — Database schema. Start a fresh AI session: "Read HANDOFF.md and do Phase 1."
+Phase 1 delivers SQL migration files in `supabase/migrations/`; a human pastes each into Supabase → SQL Editor → Run (no database password needed).
+
+### Gotchas learned in Phase 0
+
+- `VITE_SUPABASE_URL` must be the plain Project URL (`https://<ref>.supabase.co`). It was first pasted as `…/rest/v1/`, which gave "Invalid path specified in request URL" at sign-in. `src/lib/supabase.ts` now strips any path, but keep the secret clean.
+- The anon key is the newer **publishable** format (`sb_publishable_…`); it works with supabase-js 2.45.4.
+- Secrets are only read at build time: after changing one, run the workflow again.
+- After a deploy, browsers may keep the old version cached. Test in a private window or with Ctrl+F5.
+- The build log step "Check Supabase secrets are set" says whether each secret is set (never prints values).
 
 ### No local Node.js (decided 2026-11-12)
 
@@ -125,3 +134,4 @@ The builder's computer does **not** have Node.js. GitHub Actions installs, type-
 
 - **2026-11-12** — Connected local folder to GitHub. Added `RUBRIC.md`, `SPEC.md` (text copy of the PDF spec), and this handoff with the phased plan. No app code yet. Moved the 60 customers and 6-month history out of the first seed into their own later phase (now Phase 6). Switched to a lean-core build: core vs. stretch table added to `SPEC.md`, extension points added here, wow factors deferred to Phase 10.
 - **2026-11-12** — Phase 0 code: Vite + React + TS skeleton, Supabase sign-in, sidebar layout driven by route registry, About page, GitHub Actions deploy to Pages. Built without local Node.js (CI builds). Not yet verified live: waiting on repo visibility, Pages setting, secrets and a Supabase staff user.
+- **2026-11-12** — Phase 0 complete. Pages enabled, secrets added, workflow actions bumped to v5/v4 (Node 24 warning), CI secret check added, URL path-stripping fix. Staff sign-in works on the live site.
