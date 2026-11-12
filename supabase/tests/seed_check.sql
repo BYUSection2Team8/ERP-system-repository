@@ -34,12 +34,16 @@ begin
   end loop;
 
   -- Opening stock was posted, not typed: it exists in the ledger.
-  assert (select qty_on_hand from v_availability a join items i on i.id = a.item_id
-           where i.sku = 'FIL-PLA-BLUE' and a.location_id = (select id from locations where code = 'PRINT_FARM')) = 8 * 985,
-    '8 spools of blue filament (7,880 g)';
+  -- Only the opening postings are checked, so this stays true after real
+  -- sales, counts and production have moved stock (the live database).
+  assert (select sum(t.qty) from inventory_txn t join items i on i.id = t.item_id
+           where i.sku = 'FIL-PLA-BLUE' and t.source_type = 'opening'
+             and t.location_id = (select id from locations where code = 'PRINT_FARM')) = 8 * 985,
+    '8 spools of blue filament (7,880 g) opening stock';
   assert (select balance from v_account_balances where code = '1200') > 0, 'inventory on the books';
-  assert (select balance from v_account_balances where code = '3000') =
-         (select balance from v_account_balances where code = '1200'), 'opening inventory funded by owner''s equity';
+  assert (select sum(credit) - sum(debit) from ledger where source_type = 'opening' and account_code = '3000') =
+         (select sum(debit) - sum(credit) from ledger where source_type = 'opening' and account_code = '1200'),
+    'opening inventory funded by owner''s equity';
 
   raise notice 'SEED CHECKS PASSED: % items, inventory value $%', (select count(*) from items),
     (select balance from v_account_balances where code = '1200');
