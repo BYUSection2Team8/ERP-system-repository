@@ -53,7 +53,9 @@ export function ItemDetailPage() {
         c.from('item_suppliers')
           .select('unit_cost, purchase_uom, stock_per_purchase_unit, is_preferred, suppliers(name, quoted_lead_days, payment_terms)')
           .eq('item_id', id)
-          .then(unwrap<SupplierPrice[]>),
+          // The type guesser thinks the embedded supplier is an array; PostgREST
+          // returns one object because item_suppliers.supplier_id is a foreign key.
+          .then((r) => unwrap(r) as unknown as SupplierPrice[]),
       ]);
       return { txns, std, bom, suppliers };
     },

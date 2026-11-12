@@ -72,8 +72,8 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Git repo connected to GitHub
 - [x] Phase 0 — Setup (live at https://byusection2team8.github.io/ERP-system-repository/ ; staff sign-in verified 2026-11-12)
 - [ ] Phase 1 — Database schema (code done, CI database tests green 2026-11-12; **apply in Supabase** = manual steps below, then tick)
-- [ ] Phase 2 — Starter seed data
-- [ ] Phase 3 — Inventory + Barcodes
+- [ ] Phase 2 — Starter seed data (code done, CI seed check green; **apply in Supabase** = manual step 2 below)
+- [ ] Phase 3 — Inventory + Barcodes (code done, builds in CI; **check on the live site** once the database is applied, then tick)
 - [ ] Phase 4 — POS + Sales Orders
 - [ ] Phase 5 — Production + MRP
 - [ ] Phase 6 — Full customers + 6-month history
@@ -83,14 +83,42 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [ ] Phase 10 — Wow factors (stretch)
 - [ ] Phase 11 — Polish + demo prep
 
-**Next step:** a human applies the Phase 1 migrations in Supabase (steps below), then Phase 2 — Starter seed data. Start a fresh AI session: "Read HANDOFF.md and do Phase 2."
+**Next step:** a human applies the database in Supabase (steps below) and checks the Phase 3 screens on the live site (checklist below). Then Phase 4 — POS + Sales Orders. Start a fresh AI session: "Read HANDOFF.md and do Phase 4."
 
-### Phase 1 manual steps (a human does these once)
+### Database manual steps (a human does these once, in this order)
 
 1. Supabase → **SQL Editor** → New query. Paste each file from `supabase/migrations/` **in number order** (`001_schema.sql` … `006_realtime.sql`) and click **Run**. Each should say "Success. No rows returned."
-2. Paste `supabase/tests/smoke_core.sql` and Run. The output should end with **ALL PHASE 1 CHECKS PASSED** (it rolls back, so nothing is left behind). Then the same with `supabase/tests/rls_check.sql` → **ALL RLS CHECKS PASSED**.
-3. Supabase → Authentication → Sign In / Providers → turn **off** "Allow new users to sign up" (staff and portal logins are created by us). Even if left on, new sign-ups are only `customer` with no data access.
-4. Every user that existed when `002_security.sql` ran became **staff** (the Phase 0 login). To make a later user staff: SQL Editor → `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`
+2. Paste `supabase/seed/001_starter_data.sql` and Run (loads the Phase 2 starter data). Then paste `supabase/tests/seed_check.sql` and Run → **SEED CHECKS PASSED**.
+3. Paste `supabase/tests/smoke_core.sql` and Run. The output should end with **ALL PHASE 1 CHECKS PASSED** (it rolls back, so nothing is left behind). Then the same with `supabase/tests/rls_check.sql` → **ALL RLS CHECKS PASSED**.
+4. Supabase → Authentication → Sign In / Providers → turn **off** "Allow new users to sign up" (staff and portal logins are created by us). Even if left on, new sign-ups are only `customer` with no data access.
+5. Every user that existed when `002_security.sql` ran became **staff** (the Phase 0 login). To make a later user staff: SQL Editor → `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`
+
+### Phase 3 live-site checklist (do on a laptop AND a phone)
+
+1. Sign in → Dashboard shows inventory on the books (about $1,200 of opening stock: ~$420 filament, ~$250 components, ~$225 packaging, ~$300 finished goods) and recent activity.
+2. Inventory → 48 items across Print Farm / Fulfillment / Campus / QA Hold; filament shows grams and spools.
+3. Click an item → barcode, stock by location, rolled-up cost and BOM (finished items), movement history.
+4. Transfers: move 2 Dragons Fulfillment → Campus. Both columns change; a second browser signed in as another user updates by itself (Realtime).
+5. Adjust & count: count a Spinner at Campus one lower with "Cycle count" → value written off is shown and the movement appears on the item page.
+6. Barcode labels → +1 of each Product → Print (100% scale) on Avery 5160 or plain paper. Then on a phone: Inventory → 📷 Scan a printed label → opens that item. A USB scanner typing into the box + Enter works too.
+7. Backorders page shows "Nothing is backordered" (sales orders arrive in Phase 4).
+
+### Starter data (Phase 2) — `supabase/seed/001_starter_data.sql`
+
+- 7 suppliers with price lists (`item_suppliers`), 18 purchased items (4 PLA filaments in grams, 9 components, 5 packaging), 30 finished items (9 products), BOMs per plate, 5 customers (Ethan Caldwell, Rebecca Holloway, Marcus Bellweather, Jennifer Olsen, Summit Ridge Gifts — Phase 6 adds the other 55 and must skip these names).
+- **48 items, not 47:** the spec's supplier table lists 18 purchased items (its "17" is a miscount). Every one is used by a BOM or the packaging rule.
+- SKU pattern `DRG-RED`, barcode `PP-DRG-RED` (Keychain `KEY-BW`, Airplane `AIR-MC`). Barcodes are ≤14 characters so Code 128 fits a 2⅝" label.
+- Opening stock is **posted** with `receive_opening_inventory`, dated 184 days before the seed runs (before the Phase 6 history window): filament 28 spools, components, packaging, and stocked products (Dragon, Spinner, Keychain) at Fulfillment + Campus. Made-to-order and out-of-season products start at zero.
+- Rolled-up costs match the SPEC BOM table within 5¢ (checked by `seed_check.sql`); they run a few cents low on long prints because the exact machine rate is $0.2065/hr, not the spec's rounded $0.21.
+- `reorder_point_manual` is left empty on purpose: reorder points are computed from history in Phase 7.
+
+### Front-end layout (Phase 3)
+
+- `src/lib/db.ts` (`db()`, `unwrap`, `rpc`), `src/lib/useLiveQuery.ts` (load + auto-reload on Realtime changes to listed tables — use it on every screen), `src/lib/types.ts`, `src/lib/format.ts`, `src/app/ui.tsx` (PageHeader, Stat, Loading, ErrorNotice, shortLocation).
+- `AuthProvider` now loads `role` from `profiles`; customers see `features/portal/CustomerHome` (placeholder until Phase 9).
+- `features/inventory/`: `useInventoryData` (items, locations, availability, valuation, reason codes), Inventory list, Item detail (`/inventory/item/:id`, hidden route), Transfer, Adjust & count, Backorders.
+- `features/barcodes/`: `Barcode` (JsBarcode, Code 128 SVG), `CameraScanner` (@zxing/browser, rear camera), `ScanItemInput` (one box for USB scanner / camera / typing — reuse it in POS and receiving), `LabelsPage` (Avery 5160 print layout, "skip first N" for partly used sheets).
+- Routes in `src/app/routes.tsx` support `hidden: true` for detail pages.
 
 ### Database design (Phase 1) — read this before writing screens
 
@@ -155,3 +183,4 @@ The builder's computer does **not** have Node.js. GitHub Actions installs, type-
 - **2026-11-12** — Phase 0 code: Vite + React + TS skeleton, Supabase sign-in, sidebar layout driven by route registry, About page, GitHub Actions deploy to Pages. Built without local Node.js (CI builds). Not yet verified live: waiting on repo visibility, Pages setting, secrets and a Supabase staff user.
 - **2026-11-12** — Phase 0 complete. Pages enabled, secrets added, workflow actions bumped to v5/v4 (Node 24 warning), CI secret check added, URL path-stripping fix. Staff sign-in works on the live site.
 - **2026-11-12** — Phase 1 code: 6 migrations (schema, RLS, calc views, 20 business functions, reference data, realtime) plus CI database tests that apply them to Postgres 17 and check every function's numbers by hand-calculated examples (all green on first CI run). Not yet applied to Supabase: waiting on the Phase 1 manual steps.
+- **2026-11-12** — Phase 2 code: starter seed (48 items, BOMs, 7 suppliers, 5 customers, opening stock posted as transactions) + `seed_check.sql` in CI (green; seed is safe to re-run). Phase 3 code: inventory list, item detail with movements and rolled-up cost, transfers, adjustments/cycle counts with reason codes, backorders with estimated dates, Code 128 label sheet, camera + USB scanning, Realtime refresh, dashboard KPIs. Builds in CI; not yet tried against the real database (migrations not applied yet).
