@@ -7,6 +7,11 @@ import { TransferPage } from '../features/inventory/TransferPage';
 import { AdjustPage } from '../features/inventory/AdjustPage';
 import { BackordersPage } from '../features/inventory/BackordersPage';
 import { LabelsPage } from '../features/barcodes/LabelsPage';
+import { PosPage } from '../features/sales/PosPage';
+import { SalesOrdersPage } from '../features/sales/SalesOrdersPage';
+import { NewSalesOrderPage } from '../features/sales/NewSalesOrderPage';
+import { SalesOrderDetailPage } from '../features/sales/SalesOrderDetailPage';
+import { ReceiptPage } from '../features/sales/Receipt';
 
 // Route registry: the single place that lists every screen.
 // The sidebar is generated from this list, so adding a module = one folder in
@@ -21,6 +26,11 @@ export interface AppRoute {
 
 export const routes: AppRoute[] = [
   { path: '/', label: 'Dashboard', section: 'Overview', component: DashboardPage },
+  { path: '/pos', label: 'Point of sale', section: 'Sales', component: PosPage },
+  { path: '/sales', label: 'Sales orders', section: 'Sales', component: SalesOrdersPage },
+  { path: '/sales/new', label: 'New sales order', section: 'Sales', component: NewSalesOrderPage },
+  { path: '/sales/:id', label: 'Sales order', section: 'Sales', component: SalesOrderDetailPage, hidden: true },
+  { path: '/sales/:id/receipt', label: 'Receipt', section: 'Sales', component: ReceiptPage, hidden: true },
   { path: '/inventory', label: 'Inventory', section: 'Operations', component: InventoryPage },
   { path: '/inventory/item/:id', label: 'Item', section: 'Operations', component: ItemDetailPage, hidden: true },
   { path: '/inventory/transfer', label: 'Transfers', section: 'Operations', component: TransferPage },

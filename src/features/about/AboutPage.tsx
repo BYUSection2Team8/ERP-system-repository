@@ -14,6 +14,7 @@ const dbFacts = [
   'Every business action (sale, return, receipt, transfer, adjustment, production issue/complete) is one database function that succeeds or fails as a whole.',
   'Every action also posts balanced debits and credits to a general ledger; financial reports read from that ledger.',
   'Costs use the weighted-average method. Made items roll up their cost from the bill of material plus machine time and labor from Settings.',
+  'Prices, discounts, shipping and sales tax are calculated by the database, never by the screen. The POS and order screens show a live quote from the same database function that saves the order, so the preview always matches the receipt.',
   'Row-level security in the database decides what staff and customers can see, so the public web address exposes nothing.',
 ];
 

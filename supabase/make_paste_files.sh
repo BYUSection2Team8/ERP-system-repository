@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the two copy-paste files for the Supabase SQL Editor:
 #   supabase/paste/1_setup_database.sql  = migrations 001.. + seed
-#   supabase/paste/2_run_checks.sql      = seed check + smoke test + RLS test
+#   supabase/paste/2_run_checks.sql      = seed check + smoke test + RLS test + sales quote check
 # Run from the repo root:  bash supabase/make_paste_files.sh
 # (CI runs the same script and tests both files as single batches.)
 set -euo pipefail
@@ -22,12 +22,12 @@ mkdir -p supabase/paste
 
 {
   echo "-- ============================================================================="
-  echo "-- PASTE 2 of 2: CHECK THE DATABASE (seed check + smoke test + security test)"
+  echo "-- PASTE 2 of 2: CHECK THE DATABASE (seed check + smoke test + security test + sales quote check)"
   echo "-- Supabase -> SQL Editor -> New query -> paste ALL of this -> Run."
   echo "-- Leaves no test data behind (the tests roll themselves back)."
   echo "-- Success = one row saying ALL CHECKS PASSED. A failure shows an error naming the check."
   echo "-- ============================================================================="
-  for f in supabase/tests/seed_check.sql supabase/tests/smoke_core.sql supabase/tests/rls_check.sql; do
+  for f in supabase/tests/seed_check.sql supabase/tests/smoke_core.sql supabase/tests/rls_check.sql supabase/tests/sales_quote_check.sql; do
     printf '\n\n-- >>>>>>>>>>>>>>>>>>>> %s\n\n' "$f"
     cat "$f"
   done

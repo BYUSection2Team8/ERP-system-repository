@@ -66,7 +66,7 @@ export function BackordersPage() {
                 const late = r.need_date && r.est_available_date && r.est_available_date > r.need_date;
                 return (
                   <tr key={r.so_line_id}>
-                    <td>{r.order_no}<div className="muted small">{date(r.order_date)}</div></td>
+                    <td><Link to={`/sales/${r.so_id}`}>{r.order_no}</Link><div className="muted small">{date(r.order_date)}</div></td>
                     <td>{(r.customer_id && data.customers.get(r.customer_id)) || 'Walk-in'}</td>
                     <td>{item ? <Link to={`/inventory/item/${item.id}`}>{item.name}</Link> : '?'}</td>
                     <td>{loc ? shortLocation(loc) : '?'}</td>
