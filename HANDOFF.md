@@ -74,7 +74,7 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Phase 1 — Database schema (applied in Supabase via the paste files; all checks passed)
 - [x] Phase 2 — Starter seed data (applied in Supabase; seed check passed)
 - [x] Phase 3 — Inventory + Barcodes (live-site checklist passed)
-- [ ] Phase 4 — POS + Sales Orders
+- [~] Phase 4 — POS + Sales Orders (code done, CI green; waiting on the 007 paste + live-site checklist below)
 - [ ] Phase 5 — Production + MRP
 - [ ] Phase 6 — Full customers + 6-month history
 - [ ] Phase 7 — Purchasing + Suppliers
@@ -83,17 +83,36 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [ ] Phase 10 — Wow factors (stretch)
 - [ ] Phase 11 — Polish + demo prep
 
-**Next step:** Phase 4 — POS + Sales Orders. Start a fresh AI session: "Read HANDOFF.md and do Phase 4."
+**Next step:** finish Phase 4 by hand: (1) Supabase SQL Editor → paste `supabase/migrations/007_sales_quote.sql` → Run; (2) re-run Paste 2 (`supabase/paste/2_run_checks.sql`) → ALL CHECKS PASSED; (3) do the Phase 4 live-site checklist below. Until step 1 is done the POS and New order screens show "Could not find the function quote_sales_order". Then Phase 5: start a fresh AI session: "Read HANDOFF.md and do Phase 5."
 Database changes from now on: add a new numbered migration, run `bash supabase/make_paste_files.sh`, and paste only the NEW migration into the SQL Editor (Paste 1 is for an empty database). Paste 2 (checks) can be re-run any time.
 New staff logins: add the user in Supabase → Authentication → Users (tick Auto Confirm), then SQL Editor: `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`. Logins created after setup start as `customer`.
 
 ### Database manual steps (a human does these once, in this order)
 
-1. Supabase → **SQL Editor** → New query. Paste each file from `supabase/migrations/` **in number order** (`001_schema.sql` … `006_realtime.sql`) and click **Run**. Each should say "Success. No rows returned."
+1. Supabase → **SQL Editor** → New query. Paste each file from `supabase/migrations/` **in number order** (`001_schema.sql` … `007_sales_quote.sql`) and click **Run**. Each should say "Success. No rows returned."
 2. Paste `supabase/seed/001_starter_data.sql` and Run (loads the Phase 2 starter data). Then paste `supabase/tests/seed_check.sql` and Run → **SEED CHECKS PASSED**.
 3. Paste `supabase/tests/smoke_core.sql` and Run. The output should end with **ALL PHASE 1 CHECKS PASSED** (it rolls back, so nothing is left behind). Then the same with `supabase/tests/rls_check.sql` → **ALL RLS CHECKS PASSED**.
 4. Supabase → Authentication → Sign In / Providers → turn **off** "Allow new users to sign up" (staff and portal logins are created by us). Even if left on, new sign-ups are only `customer` with no data access.
 5. Every user that existed when `002_security.sql` ran became **staff** (the Phase 0 login). To make a later user staff: SQL Editor → `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`
+
+### Phase 4 live-site checklist (do on a laptop AND a phone)
+
+1. Point of sale → scan (or type) `PP-KEY-BW` three times → one line, qty 3, subtotal $14.97. Choose BYU student → discount −$1.50, tax 7.45% = $1.00, total **$14.47** (same numbers `sales_quote_check.sql` checks).
+2. Cash → Cash received $20 → "Change due $5.53" → Complete sale. The receipt shows the order number, lines, totals and a Code 128 order barcode. Print receipt prints only the receipt.
+3. View order & accounting → status Closed; journal: Dr Cash 14.47 + Dr Sales discounts 1.50 = Cr Product sales 14.97 + Cr Sales tax 1.00, plus Dr COGS / Cr Inventory. Inventory → Keychain at Campus is 3 lower; the Dashboard inventory value dropped by the COGS amount.
+4. Try to sell more Keychains than Campus has → warning, Complete is disabled. Manual discount with no reason → the totals panel shows "A manual discount needs a reason code."
+5. New sales order → Rebecca Holloway, Ship, 1 Temple LED Tealight (made to order, 0 in stock) → $5.99 shipping + UT tax → Place order. The order shows Backordered with an estimated date and appears on Backorders and in the Dashboard "Open sales orders" stat.
+6. New sales order → change ship-to state to AZ → tax becomes $0.00. Place it, then Cancel order… with a reason → Cancelled, nothing posted.
+7. New sales order → Summit Ridge Gifts, Pickup, 25 Keychains → Business 15% unlocks, payment On account (Net 30). Place → Fulfill → the journal debits A/R → Record payment & close → Cash debited, A/R credited.
+8. With a second browser signed in as another user, complete a POS sale: the other user's Sales orders list, Inventory and Dashboard update by themselves.
+
+### Sales screens (Phase 4)
+
+- **Pricing lives in the database only.** `007_sales_quote.sql` moved the discount / shipping / tax math out of `create_sales_order` into `_price_sales_order(p)`. `quote_sales_order(p)` (staff) returns the priced order without saving; `create_sales_order` and `pos_sale` save using the same function. Screens call `useQuote(payload)` (debounced) and never compute money themselves. `supabase/tests/sales_quote_check.sql` checks quote = saved order (also in Paste 2).
+- `src/features/sales/`: `salesShared.tsx` (status/channel labels, `useSalesRefData` = customers + discount reasons + settings, `useQuote`, `CartTable`, `DiscountPicker`, `TotalsTable`, `QuotePanel`), `useOrder.ts` (one order + lines, customer, ledger rows, backorders, returns, stock at its location; live), `PosPage` (`/pos`), `SalesOrdersPage` (`/sales`, status tabs with counts, latest 200), `NewSalesOrderPage` (`/sales/new`), `SalesOrderDetailPage` (`/sales/:id`: status steps, Fulfill / Close / Cancel, lines with COGS unit cost, journal entries), `Receipt` (`/sales/:id/receipt`; prints via `.print-area`).
+- Defaults: POS sells from Campus; shipped orders leave from Fulfillment, pickups are at Campus; BYU customers get the BYU discount pre-selected; customers with terms default to On account. The business discount unlocks only at the settings' minimum units.
+- Cash "change due" is screen-only (not stored). Returns/exchanges screens come in Phase 8 (the database function already exists). There is no customer master-data screen yet (Phase 6 adds the other 55 customers).
+- CI gotcha: Paste 1 grew past Linux's 128 KB limit for one command-line argument (`psql -c` failed with exit 126). The workflow now feeds each paste file through psql `\set` + `\gexec`, which still sends it as one query string like the SQL Editor.
 
 ### Phase 3 live-site checklist (do on a laptop AND a phone)
 
@@ -133,7 +152,7 @@ New staff logins: add the user in Supabase → Authentication → Users (tick Au
 - **Filament:** item uom `g`; supplier price list (`item_suppliers`) says purchase unit `spool` = 985 g. PO quantities are in spools; stock is in grams.
 - **Rules built in:** no negative stock (setting `allow_negative_inventory`); fulfillment fails as a whole if any line is short (order stays `placed` = backorder, see `v_backorders` with estimated date); one discount per order (BYU / business 25+ / manual with reason, max 50%); tax only for UT; flat shipping on shipped orders; flat packaging cost expensed on shipped + pickup orders; returns within 30 days; quality reasons → QA Hold, full refund; "changed my mind" refund of made-to-order → 10% restocking fee; exchanges create a new order with the same discount and no shipping; paid-at-purchase suppliers are paid automatically on receipt; on-account (Net 30) customer orders hit A/R and are paid when the order is closed.
 - **Security:** anon gets nothing. Staff read everything and edit master data tables directly; transaction tables can only change through the functions. Customers read products, locations, settings and their own customer row/orders. Portal ordering functions come in Phase 9.
-- **Not built yet (later phases):** ROP/EOQ/MRP/scorecard calculations (Phases 5, 7), P&L/turnover views (Phase 8), portal functions (Phase 9). Packaging uses the flat setting; boxes bought on POs are not yet consumed per order (stretch: box selection).
+- **Not built yet (later phases):** returns UI (Phase 8), ROP/EOQ/MRP/scorecard calculations (Phases 5, 7), P&L/turnover views (Phase 8), portal functions (Phase 9). Packaging uses the flat setting; boxes bought on POs are not yet consumed per order (stretch: box selection).
 
 ### Gotchas learned in Phase 0
 
@@ -187,3 +206,4 @@ The builder's computer does **not** have Node.js. GitHub Actions installs, type-
 - **2026-11-12** — Phase 1 code: 6 migrations (schema, RLS, calc views, 20 business functions, reference data, realtime) plus CI database tests that apply them to Postgres 17 and check every function's numbers by hand-calculated examples (all green on first CI run). Not yet applied to Supabase: waiting on the Phase 1 manual steps.
 - **2026-11-12** — Phase 2 code: starter seed (48 items, BOMs, 7 suppliers, 5 customers, opening stock posted as transactions) + `seed_check.sql` in CI (green; seed is safe to re-run). Phase 3 code: inventory list, item detail with movements and rolled-up cost, transfers, adjustments/cycle counts with reason codes, backorders with estimated dates, Code 128 label sheet, camera + USB scanning, Realtime refresh, dashboard KPIs. Builds in CI; not yet tried against the real database (migrations not applied yet).
 - **2026-11-12** — Database applied in Supabase with the two paste files (`supabase/make_paste_files.sh` builds them; CI tests them as single batches like the SQL Editor). All checks passed; Phase 3 live-site checklist passed. Phases 1–3 complete.
+- **2026-11-12** — Phase 4 code: migration `007_sales_quote.sql` (one pricing function shared by the live quote, sales orders and POS) + `sales_quote_check.sql`; POS (scan to add, BYU / business / manual-with-reason discounts, Utah tax, cash change, printable receipt with order barcode), sales order list / new order / detail with Placed → Fulfilled → Closed / Cancelled, backorder warnings and the journal entries each order posted; dashboard open-orders stat and clickable activity. CI green (build + all database tests, including the paste files after fixing the 128 KB argument limit). Not yet tried on the live site: 007 must be pasted into Supabase first.
