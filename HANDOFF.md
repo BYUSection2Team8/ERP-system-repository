@@ -46,7 +46,7 @@ Each phase is sized for roughly one focused AI session. Check boxes as phases fi
 
 | # | Phase | Delivers | Rubric caps |
 |---|---|---|---|
-| 0 | **Setup** | Accounts (team Gmail, Supabase), Node installed, Vite + React + TS skeleton, GitHub Pages deploy via Actions, Supabase connection, login screen | 12 (partial) |
+| 0 | **Setup** | Accounts (team Gmail, Supabase), Vite + React + TS skeleton, GitHub Pages deploy via Actions, Supabase connection, login screen | 12 (partial) |
 | 1 | **Database schema** | Core tables + extension-point columns above, ledger, RLS policies, core Postgres functions (sale, transfer, adjust, receive, production issue/complete, return), settings rows | foundation |
 | 2 | **Starter seed data** | 47 items (filament stocked in grams), BOMs, locations incl. QA Hold, suppliers, ~5 test customers, opening inventory posted as receipts. Enough to build and test screens. | Starting Data (partial) |
 | 3 | **App shell + Inventory + Barcodes** | Navigation, layout/branding, on-hand by location, transfers, adjustments w/ reason codes, backorders, Code 128 label printing, camera scanning | 2, 3 |
@@ -70,7 +70,7 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Spec written (`SPEC.md`, PDF in repo)
 - [x] Rubric saved (`RUBRIC.md`)
 - [x] Git repo connected to GitHub
-- [ ] Phase 0 — Setup
+- [ ] Phase 0 — Setup (code written and pushed; waiting on the manual GitHub/Supabase steps below, then verify login on the live site)
 - [ ] Phase 1 — Database schema
 - [ ] Phase 2 — Starter seed data
 - [ ] Phase 3 — Inventory + Barcodes
@@ -83,7 +83,38 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [ ] Phase 10 — Wow factors (stretch)
 - [ ] Phase 11 — Polish + demo prep
 
-**Next step:** Phase 0. A human must first create the team Gmail and Supabase project (see "Setup steps" in `SPEC.md`) and install Node.js LTS. EmailJS can wait until Phase 10.
+**Next step:** finish Phase 0's manual steps (below), confirm sign-in works on the live site, then Phase 1.
+
+### No local Node.js (decided 2026-11-12)
+
+The builder's computer does **not** have Node.js. GitHub Actions installs, type-checks and builds on every push to `main`, then publishes to GitHub Pages.
+- There is no `package-lock.json`; CI runs `npm install` with exact versions pinned in `package.json`.
+- To check a change, push it, wait ~2 minutes, then check the **Actions** tab (a red X means the build or type check failed; open it to read the error) and the live site.
+- If anyone does have Node.js: `npm install`, copy `.env.example` to `.env`, then `npm run dev`.
+
+### Phase 0 manual steps (a human does these once)
+
+1. **Repo public**: GitHub repo → Settings → General → Danger Zone → Change visibility → Public. (Free GitHub Pages requires it.)
+2. **Pages on**: Settings → Pages → Source: **GitHub Actions**.
+3. **Secrets**: Supabase → Project Settings → API (or Data API): copy **Project URL** and the **anon / publishable** key. GitHub repo → Settings → Secrets and variables → Actions → New repository secret:
+   - `VITE_SUPABASE_URL` = the Project URL
+   - `VITE_SUPABASE_ANON_KEY` = the anon/publishable key
+   (Never the service_role/secret key or the database password.)
+4. **Re-run deploy**: Actions tab → "Build and deploy to GitHub Pages" → Run workflow.
+5. **Staff login**: Supabase → Authentication → Users → Add user → Create new user (email + password, tick "Auto Confirm User"). Use the team Gmail with `+staff1` (e.g. `team+staff1@gmail.com`) or any address you control.
+6. **Site URL**: Supabase → Authentication → URL Configuration → Site URL = `https://byusection2team8.github.io/ERP-system-repository/`
+7. **Test**: open that URL, sign in with the user from step 5. You should see the Dashboard and the "About this system" page.
+
+### Code layout (Phase 0)
+
+- `src/app/routes.tsx` — route registry; sidebar is generated from it. New module = folder in `src/features/` + one entry here.
+- `src/app/Layout.tsx` — sidebar + top bar. `src/app/Logo.tsx` — brand mark.
+- `src/features/auth/` — Supabase email/password sign-in (`AuthProvider`, `LoginPage`). Roles (staff vs customer) come in Phase 1.
+- `src/features/about/AboutPage.tsx` — AI tools + database documentation (rubric requirement). Keep it updated.
+- `src/lib/supabase.ts` — client; shows a "not connected" notice instead of crashing if secrets are missing.
+- `src/styles.css` — navy/teal theme tokens at the top.
+- Uses `HashRouter` so refreshing a page works on GitHub Pages (URLs look like `/#/about`).
+- `.github/workflows/deploy.yml` — build + deploy.
 
 ## Open questions / decisions needed
 
@@ -93,3 +124,4 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 ## Session log
 
 - **2026-11-12** — Connected local folder to GitHub. Added `RUBRIC.md`, `SPEC.md` (text copy of the PDF spec), and this handoff with the phased plan. No app code yet. Moved the 60 customers and 6-month history out of the first seed into their own later phase (now Phase 6). Switched to a lean-core build: core vs. stretch table added to `SPEC.md`, extension points added here, wow factors deferred to Phase 10.
+- **2026-11-12** — Phase 0 code: Vite + React + TS skeleton, Supabase sign-in, sidebar layout driven by route registry, About page, GitHub Actions deploy to Pages. Built without local Node.js (CI builds). Not yet verified live: waiting on repo visibility, Pages setting, secrets and a Supabase staff user.
