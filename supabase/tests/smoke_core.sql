@@ -256,7 +256,9 @@ begin
   assert (select balance from v_account_balances where code = '1250') = 0, 'no WIP left';
   select balance into v_n from v_account_balances where code = '1200';
   select sum(ext_cost) into v_m from inventory_txn;
-  assert abs(v_n - v_m) < 0.05, format('ledger inventory %s vs stock records %s', v_n, v_m);
+  -- Ledger rounds each journal to cents: allow half a cent per journal.
+  assert abs(v_n - v_m) <= 0.005 * (select count(distinct journal_id) from ledger where account_code = '1200') + 0.01,
+    format('ledger inventory %s vs stock records %s', v_n, v_m);
   assert not exists (select 1 from v_stock_on_hand where qty_on_hand < 0), 'no negative stock';
   assert (select count(*) from v_item_standard_cost where item_id in (fg, mto) and total_cost > 0) = 2, 'standard costs';
   assert (select count(*) from activity_log) >= 20, 'activity logged';

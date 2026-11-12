@@ -39,6 +39,17 @@ jobs:
             psql -v ON_ERROR_STOP=1 -q -f "$f"
           done
 
+      - name: Load starter seed data (run twice to prove it is safe to re-run)
+        run: |
+          for f in supabase/seed/*.sql; do
+            echo "== $f"
+            psql -v ON_ERROR_STOP=1 -q -f "$f"
+            psql -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+
+      - name: Seed check (counts, rolled-up costs vs spec)
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/seed_check.sql
+
       - name: Smoke test (every business function, numbers checked)
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/smoke_core.sql
 
