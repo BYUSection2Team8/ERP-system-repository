@@ -67,5 +67,10 @@ jobs:
           psql -q -c "create database pastetest"
           export PGDATABASE=pastetest
           psql -v ON_ERROR_STOP=1 -q -f supabase/tests/ci_supabase_stub.sql
-          psql -v ON_ERROR_STOP=1 -c "$(cat supabase/paste/1_setup_database.sql)"
-          psql -v ON_ERROR_STOP=1 -c "$(cat supabase/paste/2_run_checks.sql)"
+          # Paste 1 is over Linux's 128 KB limit for one command-line argument, so
+          # read each file into a psql variable and send it with \gexec, which
+          # still runs the whole file as ONE query string (simple protocol).
+          for f in supabase/paste/1_setup_database.sql supabase/paste/2_run_checks.sql; do
+            echo "== $f ($(wc -c < "$f") bytes)"
+            printf '\\set paste `cat %s`\nselect :'"'"'paste'"'"' \\gexec\n' "$f" | psql -v ON_ERROR_STOP=1 -X
+          done
