@@ -52,6 +52,10 @@ declare
   mo  production_orders%rowtype;
   v_n numeric; v_m numeric;
   v_orders int;
+  -- Balances before the test, so it also passes on a live database that has
+  -- open A/R or work in process of its own.
+  v_ar0  numeric := coalesce((select balance from v_account_balances where code = '1100'), 0);
+  v_wip0 numeric := coalesce((select balance from v_account_balances where code = '1250'), 0);
 begin
   -- ---------------------------------------------------------------- setup
   insert into suppliers (name, quoted_lead_days, payment_terms, terms_days)
@@ -238,9 +242,9 @@ begin
   select * into so from sales_orders where id = so6;
   assert so.payment_method = 'account' and so.shipping_amount = 0 and so.total = 10.75, 'business order on account';
   perform fulfill_sales_order(so6);
-  assert (select balance from v_account_balances where code = '1100') = 10.75, 'A/R open $10.75';
+  assert (select balance from v_account_balances where code = '1100') = v_ar0 + 10.75, 'A/R up $10.75';
   perform close_sales_order(so6);
-  assert (select balance from v_account_balances where code = '1100') = 0, 'A/R paid on close';
+  assert (select balance from v_account_balances where code = '1100') = v_ar0, 'A/R paid on close';
 
   -- ------------------------------------------------------ return window
   perform pg_temp.expect_error(format('select process_return(%L)', jsonb_build_object('so_id', so1,
@@ -253,7 +257,7 @@ begin
   assert not exists (select journal_id from ledger group by journal_id having sum(debit) <> sum(credit)),
     'every journal balances';
   assert (select sum(debit) - sum(credit) from ledger) = 0, 'ledger balances';
-  assert (select balance from v_account_balances where code = '1250') = 0, 'no WIP left';
+  assert (select balance from v_account_balances where code = '1250') = v_wip0, 'no WIP left from the test';
   select balance into v_n from v_account_balances where code = '1200';
   select sum(ext_cost) into v_m from inventory_txn;
   -- Ledger rounds each journal to cents: allow half a cent per journal.
