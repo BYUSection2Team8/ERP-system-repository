@@ -42,6 +42,9 @@ jobs:
           done
 
       - name: Load seed data (run twice to prove it is safe to re-run)
+        # No time budget here, so the 6-month history is generated in one run.
+        env:
+          PGOPTIONS: "-c pp.history_budget_seconds=100000"
         run: |
           for f in supabase/seed/*.sql; do
             echo "== $f"
@@ -81,9 +84,18 @@ jobs:
           # Paste 1 is over Linux's 128 KB limit for one command-line argument, so
           # read each file into a psql variable and send it with \gexec, which
           # still runs the whole file as ONE query string (simple protocol).
-          for f in supabase/paste/1_setup_database.sql supabase/paste/2_run_checks.sql; do
-            echo "== $f ($(wc -c < "$f") bytes)"
-            w="/tmp/$(basename "$f")"
-            printf '\set paste `cat %s`\nselect :'"'"'paste'"'"' \gexec\n' "$f" > "$w"
-            bash supabase/tests/run_sql.sh "$w" || exit 1
+          paste() {
+            echo "== $1 ($(wc -c < "$1") bytes)"
+            w="/tmp/$(basename "$1")"
+            printf '\\set paste `cat %s`\nselect :'"'"'paste'"'"' \\gexec\n' "$1" > "$w"
+            bash supabase/tests/run_sql.sh "$w"
+          }
+          paste supabase/paste/1_setup_database.sql || exit 1
+          # Like the SQL Editor: the history runs in ~45-second chunks, so paste the
+          # history seed again until it reports COMPLETE.
+          for i in $(seq 1 25); do
+            psql -X -A -t -c "select value from settings where key = 'history_complete'" | grep -q true && break
+            echo "== history chunk $i"
+            paste supabase/seed/002_customers_history.sql || exit 1
           done
+          paste supabase/paste/2_run_checks.sql || exit 1
