@@ -28,7 +28,14 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Type check
-        run: npm run typecheck
+        # Errors are also reported as an annotation (readable without signing in).
+        run: |
+          if ! npm run typecheck -- --pretty false > tc.log 2>&1; then
+            cat tc.log
+            echo "::error title=Type check failed::$(grep -E 'error TS' tc.log | head -40 | sed -e 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
+          cat tc.log
 
       - name: Check Supabase secrets are set (values are never printed)
         run: |
@@ -39,7 +46,13 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Build
-        run: npm run build
+        run: |
+          if ! npm run build > build.log 2>&1; then
+            cat build.log
+            echo "::error title=Build failed::$(tail -n 30 build.log | sed -e 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+            exit 1
+          fi
+          cat build.log
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}

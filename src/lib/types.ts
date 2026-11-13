@@ -204,3 +204,235 @@ export interface Account {
   name: string;
   type: string;
 }
+
+// ---------------------------------------------------------------------------
+// Production (Phase 5)
+// ---------------------------------------------------------------------------
+export type MoStatus = 'planned' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface ProductionOrder {
+  id: string;
+  mo_no: string;
+  item_id: string;
+  qty_planned: number;
+  plates: number;
+  location_id: string;
+  output_location_id: string;
+  status: MoStatus;
+  so_id: string | null;
+  due_date: string | null;
+  qty_started: number;
+  qty_good: number;
+  qty_scrap: number;
+  scrap_reason: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  material_cost: number;
+  labor_cost: number;
+  machine_cost: number;
+  unit_cost: number | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ProductionOrderComponent {
+  mo_id: string;
+  item_id: string;
+  qty_required: number;
+  qty_issued: number;
+  unit_cost: number | null;
+}
+
+/** v_production_orders: an order plus its derived report measures. */
+export interface ProductionOrderRow {
+  id: string;
+  mo_no: string;
+  item_id: string;
+  sku: string;
+  item_name: string;
+  product_family: string | null;
+  status: MoStatus;
+  qty_planned: number;
+  plates: number;
+  qty_started: number;
+  qty_good: number;
+  qty_scrap: number;
+  scrap_reason: string | null;
+  so_id: string | null;
+  due_date: string | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  material_cost: number;
+  machine_cost: number;
+  labor_cost: number;
+  unit_cost: number | null;
+  scrap_cost: number;
+  report_date: string;
+  cycle_hours: number | null;
+  on_time: boolean | null;
+}
+
+export interface ProductionMetrics {
+  orders_in_range: number;
+  orders_completed: number;
+  orders_open: number;
+  qty_started: number;
+  qty_good: number;
+  qty_scrap: number;
+  first_pass_yield: number | null;
+  unit_yield: number | null;
+  scrap_rate: number | null;
+  avg_cycle_hours: number | null;
+  orders_with_due: number;
+  orders_on_time: number;
+  on_time_rate: number | null;
+  scrap_cost: number;
+  production_cost: number;
+}
+
+export interface StandardCost {
+  item_id: string;
+  sku: string;
+  name: string;
+  price: number | null;
+  material_cost: number;
+  machine_cost: number;
+  labor_cost: number;
+  total_cost: number;
+  margin_pct: number | null;
+}
+
+export interface BomLine {
+  parent_item_id: string;
+  component_item_id: string;
+  qty_per_plate: number;
+  units_per_plate: number;
+  qty_per_unit: number;
+}
+
+// ---------------------------------------------------------------------------
+// MRP (Phase 5)
+// ---------------------------------------------------------------------------
+export interface MrpParentRow {
+  item_id: string;
+  week_no: number;
+  week_start: string;
+  gross_demand: number;
+  on_hand: number;
+  scheduled_output: number;
+  projected_balance: number;
+  net_requirement: number;
+  planned_plates: number;
+  planned_qty: number;
+  need_date: string | null;
+  start_by: string | null;
+  lead_days: number;
+}
+
+export interface MrpComponentRow {
+  item_id: string;
+  week_no: number;
+  week_start: string;
+  gross_requirement: number;
+  scheduled_receipts: number;
+  on_hand: number;
+  projected_balance: number;
+  net_requirement: number;
+  planned_order_qty: number;
+  planned_order_units: number;
+  purchase_uom: string;
+  stock_per_purchase_unit: number;
+  need_date: string | null;
+  order_by_date: string | null;
+  lead_days: number;
+  supplier_id: string | null;
+  unit_cost: number | null;
+}
+
+// ---------------------------------------------------------------------------
+// Purchasing (Phase 7)
+// ---------------------------------------------------------------------------
+export interface Supplier {
+  id: string;
+  name: string;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  address: string | null;
+  quoted_lead_days: number;
+  payment_terms: string;
+  terms_days: number;
+  notes: string | null;
+  is_active: boolean;
+}
+
+export interface ItemSupplier {
+  item_id: string;
+  supplier_id: string;
+  supplier_part_no: string | null;
+  purchase_uom: string;
+  stock_per_purchase_unit: number;
+  unit_cost: number;
+  lead_time_days: number | null;
+  min_order_qty: number;
+  is_preferred: boolean;
+}
+
+export type PoStatus = 'draft' | 'sent' | 'partial' | 'received' | 'closed' | 'cancelled';
+
+export interface PurchaseOrder {
+  id: string;
+  po_no: string;
+  supplier_id: string;
+  status: PoStatus;
+  ship_to_location_id: string;
+  order_date: string | null;
+  lead_days: number | null;
+  expected_date: string | null;
+  terms_days: number;
+  source: 'manual' | 'mrp' | 'reorder' | 'review';
+  notes: string | null;
+  closed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface PurchaseOrderLine {
+  id: string;
+  po_id: string;
+  line_no: number;
+  item_id: string;
+  qty_ordered: number;
+  purchase_uom: string;
+  stock_per_purchase_unit: number;
+  unit_cost: number;
+  qty_received: number;
+  need_date: string | null;
+}
+
+export interface PoReceipt {
+  id: string;
+  po_id: string;
+  received_at: string;
+  location_id: string;
+  amount: number;
+  due_date: string | null;
+  notes: string | null;
+}
+
+export interface ApOpen {
+  receipt_id: string;
+  po_id: string;
+  po_no: string;
+  supplier_id: string;
+  supplier_name: string;
+  received_at: string;
+  due_date: string | null;
+  amount: number;
+  amount_paid: number;
+  balance: number;
+  is_overdue: boolean;
+}

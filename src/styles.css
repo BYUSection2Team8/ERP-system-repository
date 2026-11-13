@@ -302,3 +302,23 @@ fieldset.discount legend { font-size: 0.9rem; font-weight: 600; padding: 0 0.3re
   .inline-form input { min-width: 0; flex: 1 1 100%; }
   .cart .btn.link { padding: 0; }
 }
+
+/* Phase 5-7: production, MRP, purchasing */
+label.inline { flex-direction: row; align-items: center; gap: 0.4rem; font-weight: 400; }
+.supplier-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 0.75rem; }
+.supplier-cards .table th, .supplier-cards .table td { padding: 0.35rem 0.5rem; }
+.table.mrp td, .table.mrp th { white-space: nowrap; }
+.table.mrp tr.mrp-first td { border-top: 2px solid var(--border); }
+.table.mrp td.mrp-item { white-space: normal; min-width: 180px; vertical-align: top; background: #fafbfd; }
+.btn.link.small { padding: 0; font-size: 0.8rem; }
+.rating { display: inline-block; min-width: 4.5rem; text-align: center; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 99px; }
+.rating.keep { background: #dcf5ef; color: #17714f; }
+.rating.watch { background: var(--warn-bg); color: var(--warn-text); }
+.rating.replace { background: var(--error-bg); color: var(--error-text); }
+.score-bar { height: 6px; background: #eef1f5; border-radius: 3px; overflow: hidden; margin-top: 3px; }
+.score-bar span { display: block; height: 100%; background: var(--teal); }
+.math { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; color: var(--muted); }
+.settings-grid input { width: 9rem; }
+@media (max-width: 720px) {
+  .supplier-cards { grid-template-columns: 1fr; }
+}
