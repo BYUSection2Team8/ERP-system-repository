@@ -78,12 +78,12 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Phase 5 — Production + MRP (008 applied in Supabase; Paste 2 passed. Live-site checklist deferred to Phase 11)
 - [x] Phase 6 — Full customers + 6-month history (009 + seed/002 applied in Supabase; Paste 2 passed)
 - [x] Phase 7 — Purchasing + Suppliers (010 applied in Supabase; Paste 2 passed)
-- [ ] Phase 8 — Returns + Financials
+- [x] Phase 8 — Returns + Financials (CI green; 011 not yet pasted into Supabase — see "Phase 8 Supabase step")
 - [ ] Phase 9 — Reports + Portal + Realtime
 - [ ] Phase 10 — Wow factors (stretch)
 - [ ] Phase 11 — Polish + demo prep
 
-**Next step:** Phase 8 — Returns + Financials. Start a fresh AI session: "Read HANDOFF.md and do Phase 8."
+**Next step:** a human runs the "Phase 8 Supabase step" below, then Phase 9 — Reports + Portal + Realtime. Start a fresh AI session: "Read HANDOFF.md and do Phase 9."
 **Reading CI without signing in:** every SQL file, the type check and the build report their result as a GitHub *annotation* (job logs need a login, annotations don't): `curl -s https://api.github.com/repos/BYUSection2Team8/ERP-system-repository/check-runs/<job id>/annotations`. Job ids come from `.../actions/runs?head_sha=<commit>` → `jobs_url`. A failing SQL file shows the database error text there.
 **Live-site checklists are deferred to Phase 11** (team decision 2026-11-12): from Phase 4 on, each phase ends when CI is green and Paste 2 passes in Supabase. Write that phase's checklist into this file anyway, and run them all in Phase 11.
 Database changes from now on: add a new numbered migration, run `bash supabase/make_paste_files.sh`, and paste only the NEW migration into the SQL Editor (Paste 1 is for an empty database). Paste 2 (checks) can be re-run any time.
@@ -96,6 +96,27 @@ New staff logins: add the user in Supabase → Authentication → Users (tick Au
 3. Paste `supabase/tests/smoke_core.sql` and Run. The output should end with **ALL PHASE 1 CHECKS PASSED** (it rolls back, so nothing is left behind). Then the same with `supabase/tests/rls_check.sql` → **ALL RLS CHECKS PASSED**.
 4. Supabase → Authentication → Sign In / Providers → turn **off** "Allow new users to sign up" (staff and portal logins are created by us). Even if left on, new sign-ups are only `customer` with no data access.
 5. Every user that existed when `002_security.sql` ran became **staff** (the Phase 0 login). To make a later user staff: SQL Editor → `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`
+
+### Phase 8 Supabase step (a human does this once)
+
+1. SQL Editor → paste and Run `supabase/migrations/011_financials_returns.sql` → "Success. No rows returned."
+2. Run **Paste 2** (`bash supabase/make_paste_files.sh` first, or use CI's copy) → `ALL CHECKS PASSED`. It now also runs `financials_check.sql`.
+
+### Phase 8 live-site checklist (deferred to Phase 11)
+
+1. Sales order (fulfilled or closed, under 30 days old) → "Return / exchange" → 1 unit, reason "Changed my mind" → preview shows credit, tax back, no fee for a stocked item → Process refund → return page shows the journal (Dr Sales returns + Dr Sales tax / Cr Cash; Dr Inventory / Cr COGS) and the unit is back at the chosen location.
+2. Same on a made-to-order item (Temple) → preview shows the 10% restocking fee; the ledger credits 4300 Restocking fees.
+3. Reason "Quality defect" → "Goes to" switches to QA Hold; after processing, Inventory shows the unit at QA Hold (not sellable) and the Returns page "Units in QA Hold" counts it. Clear it with Adjust & count → "Scrapped after QA inspection".
+4. Exchange: return a Dragon - Red, choose Exchange, scan Dragon - Blue → even exchange, refund $0.00, replacement order created (fulfilled at once if in stock, otherwise backordered).
+5. An order older than 30 days → the preview shows "past the 30-day return window".
+6. Profit & loss → presets change the numbers; process a POS sale and watch Net sales / COGS move without refreshing; the 6-month table and the trial balance ("balanced") show.
+7. Inventory valuation & turnover → weighted-average value agrees with ledger 1200; value by location × category; turnover with COGS ÷ average inventory shown; change the date range and turnover changes.
+
+### Returns and financials design (Phase 8)
+
+- **011_financials_returns.sql**: `pl_report(from, to)` (13 lines: gross sales, discounts, returns, net sales, shipping, restocking fees, total revenue, COGS, packaging, gross profit, inventory adjustments = realized losses, production scrap = cost of poor quality, net income; by Utah business date), `inventory_turnover(from, to)` (COGS ÷ mean of each day's ending ledger-1200 balance, annualized, days of inventory), `v_inventory_by_location`, `quote_return(p)` (runs `process_return` inside a sub-transaction, reads the result, then raises a private error `QRBK1` to undo it — so the preview uses exactly the same rules and saves nothing).
+- **Screens**: `features/returns/` (list with QA Hold count, new return with order lookup / reasons / restock location / exchange items by scan / live preview, detail with journal), `features/finance/ProfitLossPage` (`/finance/pl`: date presets, % of net sales, last 6 months, trial balance), `features/finance/InventoryValuationPage` (`/finance/inventory`). Sales order detail has a "Return / exchange" button.
+- Note: labor and machine time are capitalized into inventory through 2300 (accrued production labor & machine), so they reach the P&L through COGS, not as a separate expense line.
 
 ### Phases 5–7 Supabase steps (a human does these once, in this order)
 
@@ -255,3 +276,4 @@ The builder's computer does **not** have Node.js. GitHub Actions installs, type-
 - **2026-11-12** — 007 applied in Supabase; Paste 2 passed after making the seed and smoke checks work on a database with real activity (they compared absolute balances that only hold on a fresh seed). Phase 4 complete. Live-site checklists moved to Phase 11.
 - **2026-11-12** — Phases 5–7 code, CI green (build + every database check, including both paste files as single batches). Phase 5: `008_production_mrp.sql` (production report view + metrics, scrap by reason, 4-week MRP for products and components) + production screens (list, new, detail with issue / complete with scrap reason / cost roll-up / journal, report) + MRP screen with one-click PO and "plan production". Phase 6: `009_customer_logins.sql` + `seed/002_customers_history.sql` (55 more customers + demo customer; 180 days of sales, production with print failures, POs with late/split/short deliveries, payments, returns, transfers, counts — all through the business functions; ~1,180 orders, 0 skipped calls, ~9 s in CI; resumable in 45-second chunks for the SQL Editor). Phase 7: `010_purchasing_planning.sql` (ROP / EOQ / periodic review view, supplier scorecard view, review log) + PO list with bills to pay, new PO, PO detail with scan-to-receive and partial receipts, suppliers scorecard, supplier add/edit, reorder planning, periodic review, Settings screen. New checks: `production_mrp_check.sql`, `history_check.sql`, `purchasing_check.sql` (hand-calculated numbers). CI now reports results as annotations. **Not yet done in Supabase:** paste 008, 009, 010, run seed/002 until COMPLETE, then Paste 2 (see "Phases 5–7 Supabase steps"); until then the new screens show a "function does not exist" error on the live site.
 - **2026-11-12** — 008, 009, 010 and seed/002 applied in Supabase; Paste 2 → ALL CHECKS PASSED. Phases 5–7 complete. (The seed now skips linking portal logins if 009 is missing, instead of failing.) Still to do by hand: the 12 portal logins and 2 more staff logins (step 4–5 of "Phases 5–7 Supabase steps").
+- **2026-11-12** — Phase 8 code, CI green: `011_financials_returns.sql` (P&L, turnover, valuation by location, return preview) + `financials_check.sql` (hand-calculated January-2099 P&L and turnover; preview saves nothing); returns & exchanges screens, Profit & loss, Inventory valuation & turnover. **Not yet done in Supabase:** paste 011, then Paste 2.
