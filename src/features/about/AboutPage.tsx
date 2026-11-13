@@ -38,6 +38,16 @@ const capabilities: { n: number; name: string; where: { to: string; label: strin
   { n: 12, name: 'Multi-user', where: [{ to: '/', label: 'Any screen: open it as two users and watch the Live badge' }] },
 ];
 
+const wows: { name: string; what: string; to: string; label: string }[] = [
+  { name: 'Live order tracking (email + QR)', what: 'Every order has a private tracking link and QR code (receipts, order pages, portal): stage, % printed, countdown and ready / delivery date, no login. The link can be emailed through EmailJS; every attempt is logged.', to: '/sales', label: 'Open any sales order' },
+  { name: 'Print failure analytics + Report failure', what: 'One click on a running print scraps the failed units (cost of poor quality on the P&L) and starts the reprint; analytics by reason, product, color, printer and week.', to: '/reports?tab=failures', label: 'Print failures report' },
+  { name: 'Show the math', what: 'Fold-out panels list the formula and every input (settings, ledger, history) behind calculated numbers: quotes, sales, production metrics, printers, capacity, packing, ROP/EOQ.', to: '/production/report', label: 'Production report' },
+  { name: 'Custom quote calculator', what: 'Price a one-off print from print hours and grams using live filament cost, machine and labor rates and the real failure rate; one click makes the item, BOM, sales order and production order. Customers can do it in the portal.', to: '/sales/quote', label: 'Custom quote' },
+  { name: 'Printer board', what: 'Each P2S printer with its running job, progress and finish time, the queue, and 30-day utilization and scrap. Prints are assigned to the least busy printer when they start.', to: '/production/printers', label: 'Printer board' },
+  { name: 'Automatic box selection', what: 'Packs each order into the fewest, smallest boxes (largest items first, 80% fill limit, longest side check) and explains it on a packing slip with packing time and packaging cost.', to: '/sales', label: 'Any shipped sales order' },
+  { name: 'Capacity model', what: 'Cubic feet used at each location from item sizes and stock, plus the filament rack, with warnings at 85% and over 100% (warn, never block) and a QA Hold inspection-backlog flag.', to: '/', label: 'Dashboard' },
+];
+
 export function AboutPage() {
   return (
     <div>
@@ -85,6 +95,18 @@ export function AboutPage() {
                   </span>
                 ))}
               </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <h2>Wow factors</h2>
+      <table className="table">
+        <tbody>
+          {wows.map((w) => (
+            <tr key={w.name}>
+              <td className="strong">{w.name}</td>
+              <td>{w.what}</td>
+              <td><Link to={w.to}>{w.label}</Link></td>
             </tr>
           ))}
         </tbody>
