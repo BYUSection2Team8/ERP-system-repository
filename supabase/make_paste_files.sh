@@ -21,6 +21,7 @@ checks=(
   supabase/tests/quotes_printers_capacity_check.sql
   supabase/tests/box_selection_check.sql
   supabase/tests/new_design_check.sql
+  supabase/tests/spools_check.sql
 )
 
 {
