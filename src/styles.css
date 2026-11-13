@@ -416,3 +416,10 @@ label.inline { flex-direction: row; align-items: center; gap: 0.4rem; font-weigh
 .space-bar span { display: block; height: 100%; background: var(--teal-dark); border-radius: 99px; }
 .space-bar.warn span { background: #e0a100; }
 .space-bar.bad span { background: var(--error-text); }
+
+/* Spools */
+.ams-slot { display: grid; grid-template-columns: 48px 1fr; gap: 0.5rem; align-items: start; padding: 0.3rem 0; border-top: 1px dashed var(--border); }
+.swatch-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #9aa6b8; vertical-align: middle; }
+.ams-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.25rem; }
+.ams-chip { background: #eef4fb; border-radius: 6px; padding: 0.15rem 0.4rem; text-align: center; }
+.ams-chip.low { background: var(--error-bg); color: var(--error-text); }

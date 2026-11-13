@@ -32,6 +32,13 @@ interface Job {
   item: { name: string; print_minutes: number | null } | null;
   finish?: string | null;
 }
+interface LoadedSpool {
+  printer_id: string;
+  ams_slot: number;
+  spool_no: string;
+  grams_left: number;
+  item: { color: string | null; name: string } | null;
+}
 interface Stats {
   printer_id: string;
   jobs: number;
@@ -45,16 +52,17 @@ interface Stats {
 async function load() {
   const c = db();
   const today = localToday();
-  const [printers, jobs, stats] = await Promise.all([
+  const [printers, jobs, stats, spools] = await Promise.all([
     c.from('printers').select('*').order('sort_order').then(unwrap<Printer[]>),
     c.from('production_orders').select('id, mo_no, status, printer_id, plates, qty_started, qty_planned, started_at, due_date, so_id, item:items(name, print_minutes)')
       .in('status', ['planned', 'in_progress']).order('created_at').then((r) => unwrap(r) as unknown as Job[]),
     c.rpc('printer_stats', { p_from: addDays(today, -29), p_to: today }).then(unwrap<Stats[]>),
+    c.from('spools').select('printer_id, ams_slot, spool_no, grams_left, item:items(color, name)').eq('status', 'loaded').then((r) => unwrap(r) as unknown as LoadedSpool[]),
   ]);
   const running = jobs.filter((j) => j.status === 'in_progress');
   const finishes = await Promise.all(running.map((j) => rpc<string>('mo_estimated_finish', { p_mo_id: j.id })));
   running.forEach((j, i) => (j.finish = finishes[i]));
-  return { printers, jobs, stats: new Map(stats.map((s) => [s.printer_id, s])) };
+  return { printers, jobs, stats: new Map(stats.map((s) => [s.printer_id, s])), spools };
 }
 
 function remaining(ms: number) {
@@ -117,6 +125,16 @@ export function PrinterBoardPage() {
                         </div>
                       );
                     })}
+                    <div className="ams-row small">
+                      {[1, 2, 3, 4].map((n) => {
+                        const s = data.spools.find((x) => x.printer_id === p.id && x.ams_slot === n);
+                        return (
+                          <span key={n} className={`ams-chip ${s && Number(s.grams_left) < 100 ? 'low' : ''}`} title={s ? `${s.spool_no}: ${Number(s.grams_left)} g left` : 'Empty slot'}>
+                            {s ? `${s.item?.color ?? s.item?.name} ${Math.round(Number(s.grams_left))} g` : '—'}
+                          </span>
+                        );
+                      })}
+                    </div>
                     {st && (
                       <>
                         <div className="printer-stats small">

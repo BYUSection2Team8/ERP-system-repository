@@ -34,6 +34,7 @@ import { ReportsPage } from '../features/reports/ReportsPage';
 import { NewDesignPage } from '../features/inventory/NewDesignPage';
 import { QuotePage } from '../features/quotes/QuotePage';
 import { PrinterBoardPage } from '../features/production/PrinterBoardPage';
+import { SpoolsPage } from '../features/production/SpoolsPage';
 
 // Route registry: the single place that lists every screen.
 // The sidebar is generated from this list, so adding a module = one folder in
@@ -68,6 +69,7 @@ export const routes: AppRoute[] = [
   { path: '/production', label: 'Production orders', section: 'Operations', component: ProductionOrdersPage },
   { path: '/production/new', label: 'New production order', section: 'Operations', component: NewProductionOrderPage, hidden: true },
   { path: '/production/printers', label: 'Printer board', section: 'Operations', component: PrinterBoardPage },
+  { path: '/production/spools', label: 'Filament spools', section: 'Operations', component: SpoolsPage },
   { path: '/production/report', label: 'Production report', section: 'Operations', component: ProductionReportPage },
   { path: '/production/:id', label: 'Production order', section: 'Operations', component: ProductionOrderDetailPage, hidden: true },
   { path: '/purchasing', label: 'Purchase orders', section: 'Purchasing', component: PurchaseOrdersPage },
