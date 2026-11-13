@@ -24,6 +24,7 @@ checks=(
   supabase/tests/spools_check.sql
   supabase/tests/demand_simulator_check.sql
   supabase/tests/capacity_overrides_check.sql
+  supabase/tests/shipping_zones_check.sql
 )
 
 {
