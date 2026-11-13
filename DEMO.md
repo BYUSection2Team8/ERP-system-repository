@@ -11,7 +11,7 @@ Inventory, Returns & Exchanges, Production, Financials, MRP + 2–4 more capabil
 
 ## 0. One-time setup (do first, ~20 minutes)
 
-- [ ] **Supabase SQL Editor**: paste and Run, in order, `supabase/migrations/012_reports_portal.sql`, `013_tracking_failures.sql`, `014_quotes_printers_capacity.sql`, `015_box_selection.sql` → each "Success. No rows returned."
+- [x] **Supabase SQL Editor** (done 2026-11-12): paste and Run, in order, `supabase/migrations/012_reports_portal.sql`, `013_tracking_failures.sql`, `014_quotes_printers_capacity.sql`, `015_box_selection.sql` → each "Success. No rows returned."
 - [ ] Run **Paste 2** (`supabase/paste/2_run_checks.sql`) → `ALL CHECKS PASSED` (now includes the reports/portal and tracking/failure checks).
 - [ ] **Portal logins** (rubric 11): Supabase → Authentication → Users → Add user (tick Auto Confirm) for at least **Demo Customer** (`demo.customer@example.com`) and one student (e.g. `ethan.caldwell@example.com`, BYU discount). They link to their customer records by email. If made before 009 ran: SQL Editor → `select link_customer_logins();`
 - [ ] **Three staff logins** (rubric 12): add two more users, then for each: `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`

@@ -89,8 +89,8 @@ export function TrackPage() {
             )}
             {(t.ready_date || t.est_delivery_date) && !['picked_up', 'delivered', 'cancelled'].includes(t.stage) && (
               <div className="track-eta">
-                {t.fulfillment_method === 'ship' ? 'Estimated delivery' : 'Ready for pickup'}
-                <strong>{date(t.fulfillment_method === 'ship' ? (t.est_delivery_date ?? t.ready_date) : t.ready_date)}</strong>
+                {t.fulfillment_method !== 'ship' ? 'Ready for pickup' : t.est_delivery_date ? 'Estimated delivery' : 'Ready to ship about'}
+                <strong>{date(t.fulfillment_method === 'ship' && t.est_delivery_date ? t.est_delivery_date : t.ready_date)}</strong>
                 {t.fulfillment_method !== 'ship' && <span className="muted small">at {t.location_name}</span>}
               </div>
             )}
