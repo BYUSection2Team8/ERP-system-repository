@@ -22,15 +22,25 @@ begin
                       and not exists (select 1 from item_suppliers s where s.item_id = i.id and s.is_preferred)),
     'every purchased item has a preferred supplier price';
 
-  -- Rolled-up unit cost vs the BOM table in SPEC.md (within 5 cents).
-  for r in select * from (values
-      ('DRG-RED', 1.07), ('KEY-BW', 0.93), ('SPN-BLUE', 2.85), ('ORN-WHITE', 1.44),
-      ('TMP-WHITE', 6.65), ('ARM-BLACK', 9.98), ('AIR-MC', 10.37), ('BYU-BLUE', 2.31),
-      ('MAG-RED', 10.69)) as x(sku, spec_cost)
+  -- Rolled-up unit cost vs the BOM table in SPEC.md (within 5 cents), with
+  -- components at their supplier price-list cost. (The live rolled-up cost uses
+  -- weighted-average costs, which move once purchase history exists.)
+  for r in select x.sku, x.spec_cost,
+                  (sum(b.qty_per_plate * s.unit_cost / s.stock_per_purchase_unit)
+                   + i.print_minutes / 60.0 * machine_rate_per_hour()
+                   + (setting_num('setup_minutes_per_plate') + setting_num('cleanup_minutes_per_plate')
+                      + coalesce(i.assembly_minutes, 0)) / 60.0 * setting_num('labor_rate')) / i.units_per_plate as cost
+             from (values
+               ('DRG-RED', 1.07), ('KEY-BW', 0.93), ('SPN-BLUE', 2.85), ('ORN-WHITE', 1.44),
+               ('TMP-WHITE', 6.65), ('ARM-BLACK', 9.98), ('AIR-MC', 10.37), ('BYU-BLUE', 2.31),
+               ('MAG-RED', 10.69)) as x(sku, spec_cost)
+             join items i on i.sku = x.sku
+             join boms b on b.parent_item_id = i.id
+             join item_suppliers s on s.item_id = b.component_item_id and s.is_preferred
+            group by x.sku, x.spec_cost, i.print_minutes, i.assembly_minutes, i.units_per_plate
   loop
-    assert abs((select total_cost from v_item_standard_cost where sku = r.sku) - r.spec_cost) <= 0.05,
-      format('%s rolled-up cost %s vs spec %s', r.sku,
-             (select round(total_cost, 4) from v_item_standard_cost where sku = r.sku), r.spec_cost);
+    assert abs(r.cost - r.spec_cost) <= 0.05,
+      format('%s rolled-up cost %s vs spec %s', r.sku, round(r.cost, 4), r.spec_cost);
   end loop;
 
   -- Opening stock was posted, not typed: it exists in the ledger.

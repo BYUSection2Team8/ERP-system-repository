@@ -17,6 +17,14 @@ import { NewProductionOrderPage } from '../features/production/NewProductionOrde
 import { ProductionOrderDetailPage } from '../features/production/ProductionOrderDetailPage';
 import { ProductionReportPage } from '../features/production/ProductionReportPage';
 import { MrpPage } from '../features/mrp/MrpPage';
+import { PurchaseOrdersPage } from '../features/purchasing/PurchaseOrdersPage';
+import { NewPurchaseOrderPage } from '../features/purchasing/NewPurchaseOrderPage';
+import { PurchaseOrderDetailPage } from '../features/purchasing/PurchaseOrderDetailPage';
+import { SuppliersPage } from '../features/purchasing/SuppliersPage';
+import { SupplierDetailPage } from '../features/purchasing/SupplierDetailPage';
+import { ReorderPlanningPage } from '../features/purchasing/ReorderPlanningPage';
+import { PeriodicReviewPage } from '../features/purchasing/PeriodicReviewPage';
+import { SettingsPage } from '../features/settings/SettingsPage';
 
 // Route registry: the single place that lists every screen.
 // The sidebar is generated from this list, so adding a module = one folder in
@@ -46,6 +54,15 @@ export const routes: AppRoute[] = [
   { path: '/production/new', label: 'New production order', section: 'Operations', component: NewProductionOrderPage, hidden: true },
   { path: '/production/report', label: 'Production report', section: 'Operations', component: ProductionReportPage },
   { path: '/production/:id', label: 'Production order', section: 'Operations', component: ProductionOrderDetailPage, hidden: true },
+  { path: '/purchasing', label: 'Purchase orders', section: 'Purchasing', component: PurchaseOrdersPage },
+  { path: '/purchasing/new', label: 'New purchase order', section: 'Purchasing', component: NewPurchaseOrderPage, hidden: true },
+  { path: '/purchasing/planning', label: 'Reorder planning', section: 'Purchasing', component: ReorderPlanningPage },
+  { path: '/purchasing/review', label: 'Periodic review', section: 'Purchasing', component: PeriodicReviewPage },
+  { path: '/purchasing/:id', label: 'Purchase order', section: 'Purchasing', component: PurchaseOrderDetailPage, hidden: true },
+  { path: '/suppliers', label: 'Suppliers & scorecard', section: 'Purchasing', component: SuppliersPage },
+  { path: '/suppliers/new', label: 'Add supplier', section: 'Purchasing', component: SupplierDetailPage, hidden: true },
+  { path: '/suppliers/:id', label: 'Supplier', section: 'Purchasing', component: SupplierDetailPage, hidden: true },
   { path: '/mrp', label: 'MRP', section: 'Purchasing', component: MrpPage },
+  { path: '/settings', label: 'Settings', section: 'System', component: SettingsPage },
   { path: '/about', label: 'About this system', section: 'System', component: AboutPage },
 ];

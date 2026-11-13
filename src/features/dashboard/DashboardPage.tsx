@@ -64,7 +64,7 @@ export function DashboardPage() {
               {data.activity.map((a) => (
                 <li key={a.id}>
                   <span className="muted small">{dateTime(a.at)} · {a.actor ?? 'system'}</span>
-                  <span>{a.link?.startsWith('/sales/') ? <Link to={a.link}>{a.summary}</Link> : a.summary}</span>
+                  <span>{a.link && /^\/(sales|production|purchasing)\/[0-9a-f-]{36}$/.test(a.link) ? <Link to={a.link}>{a.summary}</Link> : a.summary}</span>
                 </li>
               ))}
             </ul>

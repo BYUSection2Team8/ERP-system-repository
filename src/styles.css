@@ -322,3 +322,4 @@ label.inline { flex-direction: row; align-items: center; gap: 0.4rem; font-weigh
 @media (max-width: 720px) {
   .supplier-cards { grid-template-columns: 1fr; }
 }
+.table tr.row-alert td { background: #fffaf0; }
