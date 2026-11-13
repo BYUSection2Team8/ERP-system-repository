@@ -75,7 +75,7 @@ interface PeriodRow {
 function SalesReport({ from, to, range }: { from: string; to: string; range: ReactNode }) {
   const [grain, setGrain] = useState<'day' | 'week'>('day');
   const { data, error, loading } = useLiveQuery(
-    () => db().rpc('sales_by_period', { p_from: from, p_to: to, p_grain: grain }).then(unwrap<PeriodRow[]>),
+    async () => unwrap<PeriodRow[]>(await db().rpc('sales_by_period', { p_from: from, p_to: to, p_grain: grain })),
     ['ledger', 'sales_orders'],
     [from, to, grain],
   );
@@ -184,7 +184,7 @@ function TopSellersReport({ from, to, range }: { from: string; to: string; range
   const [by, setBy] = useState<'revenue' | 'units' | 'profit'>('revenue');
   const [group, setGroup] = useState<'item' | 'product'>('item');
   const { data, error, loading } = useLiveQuery(
-    () => db().rpc('top_sellers', { p_from: from, p_to: to }).then(unwrap<TopRow[]>),
+    async () => unwrap<TopRow[]>(await db().rpc('top_sellers', { p_from: from, p_to: to })),
     ['sales_orders', 'returns'],
     [from, to],
   );
@@ -435,7 +435,7 @@ interface ScoreRow {
 
 function SupplierPerformanceReport() {
   const { data, error, loading } = useLiveQuery(
-    () => db().from('v_supplier_scorecard').select('*').order('name').then(unwrap<ScoreRow[]>),
+    async () => unwrap<ScoreRow[]>(await db().from('v_supplier_scorecard').select('*').order('name')),
     ['purchase_orders', 'po_receipts', 'purchase_order_lines', 'suppliers'],
   );
   return (
