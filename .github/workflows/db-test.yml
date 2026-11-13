@@ -73,6 +73,9 @@ jobs:
       - name: Purchasing check (ROP, EOQ, scorecard, Phase 7)
         run: bash supabase/tests/run_sql.sh supabase/tests/purchasing_check.sql
 
+      - name: Financials check (P&L, turnover, valuation, return preview, Phase 8)
+        run: bash supabase/tests/run_sql.sh supabase/tests/financials_check.sql
+
       # The SQL Editor sends a whole paste as ONE batch, so test the paste files that way
       # on a second, empty database.
       - name: Paste files work as single batches (like the Supabase SQL Editor)
