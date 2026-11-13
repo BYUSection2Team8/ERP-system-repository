@@ -4,6 +4,8 @@ import { dateTime, money, qty } from '../../lib/format';
 import { Barcode } from '../barcodes/Barcode';
 import { methodLabels, paymentLabels, TotalsTable, useSalesRefData } from './salesShared';
 import { useOrder, type OrderView } from './useOrder';
+import { QrCode } from '../tracking/QrCode';
+import { trackingUrl } from '../tracking/tracking';
 
 /** Printable receipt built only from the saved order (not from the screen). */
 export function Receipt({ view, companyName, returnDays }: { view: OrderView; companyName: string; returnDays: number }) {
@@ -63,6 +65,12 @@ export function Receipt({ view, companyName, returnDays }: { view: OrderView; co
       <div className="receipt-barcode">
         <Barcode value={order.order_no} height={36} moduleWidth={1.4} />
       </div>
+      {order.tracking_token && order.status !== 'cancelled' && (
+        <div className="receipt-qr">
+          <QrCode value={trackingUrl(order.tracking_token)} size={92} label="QR code to track this order" />
+          <div className="small">Scan to track your order{order.fulfillment_method === 'counter' ? '' : ' live'}</div>
+        </div>
+      )}
       <p className="receipt-foot small">
         Returns accepted within {returnDays} days with this receipt. Thank you for supporting a BYU student business!
       </p>

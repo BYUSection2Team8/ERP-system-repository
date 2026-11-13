@@ -105,6 +105,8 @@ export interface PortalOrder {
   closed_at: string | null;
   cancelled_at: string | null;
   notes: string | null;
+  tracking_token: string | null;
+  customer_email: string | null;
   sales_order_lines: { id: string; line_no: number; item_id: string; qty: number; unit_price: number; net_unit_price: number; line_total: number; qty_returned: number }[];
 }
 

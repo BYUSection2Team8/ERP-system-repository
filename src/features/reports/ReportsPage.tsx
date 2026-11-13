@@ -18,6 +18,7 @@ const tabs = [
   { key: 'low', label: 'Low stock' },
   { key: 'location', label: 'Inventory by location' },
   { key: 'suppliers', label: 'Supplier performance' },
+  { key: 'failures', label: 'Print failures' },
 ] as const;
 type TabKey = (typeof tabs)[number]['key'];
 
@@ -55,6 +56,7 @@ export function ReportsPage() {
       {tab === 'low' && <LowStockReport />}
       {tab === 'location' && <StockByLocationReport />}
       {tab === 'suppliers' && <SupplierPerformanceReport />}
+      {tab === 'failures' && <FailureReport from={from} to={to} range={range} />}
     </div>
   );
 }
@@ -482,6 +484,104 @@ function SupplierPerformanceReport() {
         </div>
       )}
       <p className="muted small">From purchase-order history: actual lead = last receipt date − sent date; on time = received by the expected date; fill rate = value received ÷ value ordered. Score = on-time 40% + fill rate 30% + lead-time accuracy 20% + price stability 10%. Full scorecard: <Link to="/suppliers">Suppliers & scorecard</Link>.</p>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+interface FailureRow {
+  dimension: 'total' | 'product' | 'color' | 'reason' | 'week';
+  key: string;
+  label: string;
+  orders: number;
+  failed_orders: number;
+  units_started: number;
+  units_scrapped: number;
+  scrap_rate: number | null;
+  wasted_grams: number | null;
+  scrap_cost: number;
+}
+
+function FailureTable({ rows, first, rateNote }: { rows: FailureRow[]; first: string; rateNote: string }) {
+  return (
+    <div className="table-wrap">
+      <table className="table">
+        <thead>
+          <tr>
+            <th>{first}</th>
+            <th className="num">Orders with failures</th>
+            <th className="num">Units scrapped</th>
+            <th className="num" title={rateNote}>Scrap rate</th>
+            <th className="num">Filament wasted</th>
+            <th className="num">Cost of poor quality</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.key}>
+              <td>{r.label}</td>
+              <td className="num">{r.failed_orders} <span className="muted small">of {r.orders}</span></td>
+              <td className="num">{Number(r.units_scrapped).toLocaleString()} <span className="muted small">of {Number(r.units_started).toLocaleString()}</span></td>
+              <td className={`num ${Number(r.scrap_rate) >= 0.08 ? 'bad strong' : ''}`}>{pctText(r.scrap_rate)}</td>
+              <td className="num">{qty(r.wasted_grams ?? 0, 'g')}</td>
+              <td className="num">{money(r.scrap_cost)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function FailureReport({ from, to, range }: { from: string; to: string; range: ReactNode }) {
+  const { data, error, loading } = useLiveQuery(
+    async () => unwrap<FailureRow[]>(await db().rpc('print_failure_analytics', { p_from: from, p_to: to })),
+    ['production_orders'],
+    [from, to],
+  );
+  const by = (d: FailureRow['dimension']) => (data ?? []).filter((r) => r.dimension === d);
+  const total = by('total')[0];
+  const sortRate = (a: FailureRow, b: FailureRow) => Number(b.scrap_rate ?? 0) - Number(a.scrap_rate ?? 0);
+  const reasons = by('reason').sort((a, b) => Number(b.units_scrapped) - Number(a.units_scrapped));
+  const weeks = by('week').sort((a, b) => a.key.localeCompare(b.key));
+
+  return (
+    <>
+      {range}
+      {loading && <Loading what="print failures" />}
+      {error && <ErrorNotice message={error} />}
+      {data && !total && <p className="muted">No production orders were completed in this period.</p>}
+      {data && total && (
+        <>
+          <div className="stats">
+            <Stat label="Scrap rate" value={pctText(total.scrap_rate)} hint={`${Number(total.units_scrapped).toLocaleString()} of ${Number(total.units_started).toLocaleString()} units started`} tone={Number(total.scrap_rate) >= 0.05 ? 'warn' : undefined} />
+            <Stat label="Prints with a failure" value={`${total.failed_orders} of ${total.orders}`} hint="Completed production orders" />
+            <Stat label="Filament wasted" value={qty(total.wasted_grams ?? 0, 'g')} hint="Filament issued × scrapped share" />
+            <Stat label="Cost of poor quality" value={money(total.scrap_cost)} hint={<Link to="/finance/pl">Production scrap on the P&amp;L</Link>} />
+          </div>
+          <h2>Scrap rate by week</h2>
+          <BarChart
+            title="Scrap rate by week"
+            format={(v) => `${(v * 100).toFixed(0)}%`}
+            bars={weeks.map((w) => ({
+              key: w.key,
+              label: shortDate(w.key),
+              value: Number(w.scrap_rate ?? 0),
+              tooltip: `${w.label}: ${pctText(w.scrap_rate)} scrapped (${Number(w.units_scrapped)} of ${Number(w.units_started)} units), ${money(w.scrap_cost)}`,
+            }))}
+          />
+          <h2>By failure reason</h2>
+          <FailureTable rows={reasons} first="Reason" rateNote="Units scrapped for this reason ÷ all units started" />
+          <h2>By product</h2>
+          <FailureTable rows={by('product').sort(sortRate)} first="Product" rateNote="Units scrapped ÷ units started for this product" />
+          <h2>By color</h2>
+          <FailureTable rows={by('color').sort(sortRate)} first="Color" rateNote="Units scrapped ÷ units started in this color" />
+          <p className="muted small">
+            From completed production orders (by finish date). Staff record failures on the production order (Report print failure, or Complete with scrap and a reason);
+            the cost is the rolled-up unit cost of the scrapped units.
+          </p>
+        </>
+      )}
     </>
   );
 }

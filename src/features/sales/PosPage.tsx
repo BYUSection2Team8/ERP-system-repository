@@ -21,6 +21,7 @@ import {
   type DiscountChoice,
 } from './salesShared';
 import { useOrder } from './useOrder';
+import { TrackingCard } from '../tracking/TrackingCard';
 
 /**
  * Point of sale (Campus Counter by default). One click runs pos_sale, which
@@ -237,7 +238,14 @@ function PosDone({
       {change !== null && change > 0 && <div className="notice ok change-banner no-print">Change due: {money(change)}</div>}
       {loading && <Loading what="receipt" />}
       {error && <ErrorNotice message={error} />}
-      {data && <Receipt view={data} companyName={companyName} returnDays={returnDays} />}
+      {data && (
+        <div className="pos-done">
+          <Receipt view={data} companyName={companyName} returnDays={returnDays} />
+          <div className="no-print">
+            <TrackingCard soId={data.order.id} token={data.order.tracking_token} orderNo={data.order.order_no} defaultEmail={data.order.customer_email ?? data.customer?.email} toName={data.customer?.contact_name ?? data.customer?.name} compact />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

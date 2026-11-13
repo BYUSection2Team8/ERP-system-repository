@@ -8,6 +8,8 @@ import { date, dateTime, money } from '../../lib/format';
 import { useAuth } from '../auth/AuthProvider';
 import type { DiscountType } from '../../lib/types';
 import { StatusBadge, TotalsTable, paymentLabels } from '../sales/salesShared';
+import { TrackingCard } from '../tracking/TrackingCard';
+import { trackingUrl } from '../tracking/tracking';
 import {
   readCart,
   useCatalog,
@@ -414,6 +416,9 @@ function MyOrders() {
           Thank you! Order <strong>{justPlaced.order_no}</strong> is placed ({money(justPlaced.total)}). Show this order number at the counter.
         </div>
       )}
+      {justPlaced && (
+        <TrackingCard soId={justPlaced.id} token={justPlaced.tracking_token} orderNo={justPlaced.order_no} defaultEmail={justPlaced.customer_email} showLog={false} compact />
+      )}
       {actionError && <ErrorNotice message={actionError} />}
       {loading && <Loading what="your orders" />}
       {error && <ErrorNotice message={error} />}
@@ -433,9 +438,12 @@ function MyOrders() {
                     {o.payment_method && ` · ${paymentLabels[o.payment_method] ?? o.payment_method}`}
                   </p>
                 </div>
+                <div className="page-actions">
+                {o.tracking_token && <a className="btn" href={trackingUrl(o.tracking_token)} target="_blank" rel="noreferrer">Track</a>}
                 {o.status === 'placed' && (
                   <button className="btn" disabled={busy === o.id} onClick={() => cancel(o.id, o.order_no)}>{busy === o.id ? 'Cancelling…' : 'Cancel order'}</button>
                 )}
+                </div>
               </div>
               <p className="small" style={{ margin: '0 0 0.5rem' }}>{customerStatus(o.status, bo.length > 0, latest, where)}</p>
               <div className="detail-grid">

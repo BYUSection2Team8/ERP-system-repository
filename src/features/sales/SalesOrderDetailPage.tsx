@@ -6,6 +6,7 @@ import { date, dateTime, money, qty, unitCost } from '../../lib/format';
 import type { LedgerRow } from '../../lib/types';
 import { channelLabels, methodLabels, paymentLabels, StatusBadge, TotalsTable } from './salesShared';
 import { useOrder, type OrderView } from './useOrder';
+import { TrackingCard } from '../tracking/TrackingCard';
 
 const journalNames: Record<string, string> = {
   sale: 'Sale (fulfillment)',
@@ -64,6 +65,10 @@ export function SalesOrderDetailPage() {
       />
 
       <StatusSteps view={data} />
+
+      {order.status !== 'cancelled' && (
+        <TrackingCard soId={order.id} token={order.tracking_token} orderNo={order.order_no} defaultEmail={order.customer_email ?? customer?.email} toName={customer?.contact_name ?? customer?.name} />
+      )}
 
       {order.status === 'placed' && (
         <div className="card action-card">

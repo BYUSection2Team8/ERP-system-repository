@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ErrorNotice, Loading, PageHeader } from '../../app/ui';
 import { db, errorMessage, rpc, unwrap } from '../../lib/db';
 import { date, dateTime, money, qty, unitCost } from '../../lib/format';
-import type { Account, Availability, Item, LedgerRow, Location, ProductionOrder, ProductionOrderComponent } from '../../lib/types';
+import type { Account, Availability, Item, LedgerRow, Location, ProductionOrder, ProductionOrderComponent, ReasonCode } from '../../lib/types';
 import { useLiveQuery } from '../../lib/useLiveQuery';
 import { JournalTables } from '../../app/JournalTables';
 import { MoStatusBadge, hoursText, nowLocalInput, useProductionRefData } from './productionShared';
@@ -204,6 +204,8 @@ export function ProductionOrderDetailPage() {
         </form>
       )}
 
+      {mo.status === 'in_progress' && <ReportFailure mo={mo} reasons={ref.data?.scrapReasons ?? []} />}
+
       {result && <div className={`notice ${result.ok ? 'ok' : 'error'} spaced`}>{result.text}</div>}
 
       <div className="detail-grid">
@@ -365,5 +367,71 @@ function Steps({ mo }: { mo: ProductionOrder }) {
       </ol>
       <MoStatusBadge status={mo.status} />
     </div>
+  );
+}
+
+/**
+ * Wow factor #2: one click when a print fails on the printer. The database
+ * scraps the failed units (cost of poor quality), creates the reprint for the
+ * same sales order and starts it if components are on hand; the customer's
+ * tracking page moves back to "Printing" by itself.
+ */
+function ReportFailure({ mo, reasons }: { mo: ProductionOrder; reasons: ReasonCode[] }) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [failed, setFailed] = useState(String(Number(mo.qty_started)));
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const started = Number(mo.qty_started);
+  const n = Number(failed);
+  const ok = Number.isInteger(n) && n >= 1 && n <= started && reason !== '';
+
+  async function submit() {
+    setBusy(true);
+    setErr(null);
+    try {
+      const id = await rpc<string>('report_print_failure', { p_mo_id: mo.id, p_reason: reason, p_qty_failed: n });
+      navigate(`/production/${id}`);
+    } catch (e) {
+      setErr(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <div className="spaced">
+        <button className="btn danger" onClick={() => setOpen(true)}>Report print failure…</button>
+      </div>
+    );
+  }
+  return (
+    <form className="card action-card failure-card" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
+      <h2 style={{ margin: 0 }}>Report print failure</h2>
+      <p className="muted">
+        Scraps the failed units now (their filament, machine time and labor go to production scrap on the P&amp;L), then creates a reprint for the same
+        {mo.so_id ? ' sales order' : ' quantity'} and starts it if the components are on hand. Units that printed fine still go into stock.
+      </p>
+      <div className="form-row">
+        <label className="grow">
+          What went wrong
+          <select value={reason} onChange={(e) => setReason(e.target.value)} required autoFocus>
+            <option value="">Choose a failure reason…</option>
+            {reasons.map((r) => <option key={r.code} value={r.code}>{r.description}</option>)}
+          </select>
+        </label>
+        <label>
+          Units failed (of {started})
+          <input type="number" min={1} max={started} step={1} value={failed} onChange={(e) => setFailed(e.target.value)} />
+        </label>
+      </div>
+      {err && <div className="notice error">{err}</div>}
+      <div className="page-actions">
+        <button className="btn danger" disabled={!ok || busy}>{busy ? 'Recording…' : 'Scrap & reprint'}</button>
+        <button type="button" className="btn link" onClick={() => setOpen(false)}>Never mind</button>
+      </div>
+    </form>
   );
 }

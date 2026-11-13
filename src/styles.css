@@ -362,3 +362,32 @@ label.inline { flex-direction: row; align-items: center; gap: 0.4rem; font-weigh
   .portal-top, .portal-main, .cart-bar { padding-left: 16px; padding-right: 16px; }
 }
 .card.highlight { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(46, 196, 182, 0.25); }
+
+/* Phase 10: order tracking, print failures */
+.tracking-card { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; }
+.tracking-card .qr { border: 1px solid var(--border); border-radius: 6px; flex-shrink: 0; }
+.tracking-body { display: flex; flex-direction: column; gap: 0.5rem; flex: 1 1 260px; min-width: 0; }
+.tracking-card .inline-form input { min-width: 0; flex: 1 1 200px; }
+.email-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.email-log .badge { margin-left: 0; }
+.receipt-qr { display: flex; align-items: center; gap: 0.6rem; justify-content: center; margin: 0.5rem 0; }
+.pos-done { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.pos-done > .no-print { flex: 1 1 320px; }
+.track-card { max-width: 480px; }
+.track-stage { font-size: 1.6rem; font-weight: 800; color: var(--navy); margin-top: 0.2rem; }
+.track-stage.cancelled { color: var(--error-text); }
+.track-stage.printing, .track-stage.ready, .track-stage.shipped { color: var(--teal-dark); }
+.progress { height: 12px; background: #eef1f5; border-radius: 99px; overflow: hidden; }
+.progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--teal-dark), var(--teal)); border-radius: 99px; transition: width 1s linear; }
+.track-eta { display: flex; flex-direction: column; background: #eef8f7; border-radius: var(--radius); padding: 0.6rem 0.8rem; font-size: 0.85rem; }
+.track-eta strong { font-size: 1.3rem; color: var(--navy); }
+.track-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.track-steps li { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 0.6rem; padding: 0.35rem 0; position: relative; color: var(--muted); }
+.track-steps li.done { color: var(--text); font-weight: 600; }
+.track-steps li.off { text-decoration: line-through; }
+.track-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #b3bccb; background: #fff; }
+.track-steps li.done .track-dot { border-color: var(--teal-dark); background: var(--teal); }
+.failure-card { border-left: 4px solid var(--error-text); }
+@media print {
+  .receipt-qr img { width: 0.9in; height: 0.9in; }
+}

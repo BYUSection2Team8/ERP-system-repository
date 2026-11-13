@@ -129,6 +129,7 @@ export interface SalesOrder {
   total: number;
   payment_method: PaymentMethod | null;
   customer_email: string | null;
+  tracking_token: string | null;
   notes: string | null;
   fulfilled_at: string | null;
   closed_at: string | null;
