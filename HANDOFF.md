@@ -57,7 +57,7 @@ Each phase is sized for roughly one focused AI session. Check boxes as phases fi
 | 8 | **Returns + Financials** | Returns/exchanges with QA Hold & restocking fee; P&L, valuation, turnover | 5, 9 |
 | 9 | **Reports + Customer portal + Realtime** | Manager reports; customer login, inventory by location, pickup orders; Realtime refresh across users; "About this system" page (AI tools + database) | 10, 11, 12 |
 | 10 | **Wow factors (stretch)** | One at a time, in the priority order at the top of `SPEC.md`. At least #1 (order tracking + email/QR) before the demo. EmailJS account needed here. | Wow |
-| 11 | **Polish + demo prep** | Bug bash on phones/laptops, test with unexpected inputs, printed barcode labels, practice runs | all |
+| 11 | **Polish + demo prep** | Run every deferred live-site checklist (Phase 4 onward), bug bash on phones/laptops, test with unexpected inputs, printed barcode labels, practice runs | all |
 
 **Core is done after Phase 9.** That covers all 12 capabilities.
 
@@ -74,7 +74,7 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Phase 1 — Database schema (applied in Supabase via the paste files; all checks passed)
 - [x] Phase 2 — Starter seed data (applied in Supabase; seed check passed)
 - [x] Phase 3 — Inventory + Barcodes (live-site checklist passed)
-- [~] Phase 4 — POS + Sales Orders (code done, CI green; waiting on the 007 paste + live-site checklist below)
+- [x] Phase 4 — POS + Sales Orders (007 applied in Supabase; all checks passed. Live-site checklist deferred to Phase 11)
 - [ ] Phase 5 — Production + MRP
 - [ ] Phase 6 — Full customers + 6-month history
 - [ ] Phase 7 — Purchasing + Suppliers
@@ -83,7 +83,8 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [ ] Phase 10 — Wow factors (stretch)
 - [ ] Phase 11 — Polish + demo prep
 
-**Next step:** finish Phase 4 by hand: (1) Supabase SQL Editor → paste `supabase/migrations/007_sales_quote.sql` → Run; (2) re-run Paste 2 (`supabase/paste/2_run_checks.sql`) → ALL CHECKS PASSED; (3) do the Phase 4 live-site checklist below. Until step 1 is done the POS and New order screens show "Could not find the function quote_sales_order". Then Phase 5: start a fresh AI session: "Read HANDOFF.md and do Phase 5."
+**Next step:** Phase 5 — Production + MRP. Start a fresh AI session: "Read HANDOFF.md and do Phase 5."
+**Live-site checklists are deferred to Phase 11** (team decision 2026-11-12): from Phase 4 on, each phase ends when CI is green and Paste 2 passes in Supabase. Write that phase's checklist into this file anyway, and run them all in Phase 11.
 Database changes from now on: add a new numbered migration, run `bash supabase/make_paste_files.sh`, and paste only the NEW migration into the SQL Editor (Paste 1 is for an empty database). Paste 2 (checks) can be re-run any time.
 New staff logins: add the user in Supabase → Authentication → Users (tick Auto Confirm), then SQL Editor: `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`. Logins created after setup start as `customer`.
 
@@ -95,7 +96,7 @@ New staff logins: add the user in Supabase → Authentication → Users (tick Au
 4. Supabase → Authentication → Sign In / Providers → turn **off** "Allow new users to sign up" (staff and portal logins are created by us). Even if left on, new sign-ups are only `customer` with no data access.
 5. Every user that existed when `002_security.sql` ran became **staff** (the Phase 0 login). To make a later user staff: SQL Editor → `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`
 
-### Phase 4 live-site checklist (do on a laptop AND a phone)
+### Phase 4 live-site checklist (deferred to Phase 11; do on a laptop AND a phone)
 
 1. Point of sale → scan (or type) `PP-KEY-BW` three times → one line, qty 3, subtotal $14.97. Choose BYU student → discount −$1.50, tax 7.45% = $1.00, total **$14.47** (same numbers `sales_quote_check.sql` checks).
 2. Cash → Cash received $20 → "Change due $5.53" → Complete sale. The receipt shows the order number, lines, totals and a Code 128 order barcode. Print receipt prints only the receipt.
@@ -207,3 +208,4 @@ The builder's computer does **not** have Node.js. GitHub Actions installs, type-
 - **2026-11-12** — Phase 2 code: starter seed (48 items, BOMs, 7 suppliers, 5 customers, opening stock posted as transactions) + `seed_check.sql` in CI (green; seed is safe to re-run). Phase 3 code: inventory list, item detail with movements and rolled-up cost, transfers, adjustments/cycle counts with reason codes, backorders with estimated dates, Code 128 label sheet, camera + USB scanning, Realtime refresh, dashboard KPIs. Builds in CI; not yet tried against the real database (migrations not applied yet).
 - **2026-11-12** — Database applied in Supabase with the two paste files (`supabase/make_paste_files.sh` builds them; CI tests them as single batches like the SQL Editor). All checks passed; Phase 3 live-site checklist passed. Phases 1–3 complete.
 - **2026-11-12** — Phase 4 code: migration `007_sales_quote.sql` (one pricing function shared by the live quote, sales orders and POS) + `sales_quote_check.sql`; POS (scan to add, BYU / business / manual-with-reason discounts, Utah tax, cash change, printable receipt with order barcode), sales order list / new order / detail with Placed → Fulfilled → Closed / Cancelled, backorder warnings and the journal entries each order posted; dashboard open-orders stat and clickable activity. CI green (build + all database tests, including the paste files after fixing the 128 KB argument limit). Not yet tried on the live site: 007 must be pasted into Supabase first.
+- **2026-11-12** — 007 applied in Supabase; Paste 2 passed after making the seed and smoke checks work on a database with real activity (they compared absolute balances that only hold on a fresh seed). Phase 4 complete. Live-site checklists moved to Phase 11.
