@@ -31,6 +31,7 @@ import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
 import { ProfitLossPage } from '../features/finance/ProfitLossPage';
 import { InventoryValuationPage } from '../features/finance/InventoryValuationPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
+import { NewDesignPage } from '../features/inventory/NewDesignPage';
 import { QuotePage } from '../features/quotes/QuotePage';
 import { PrinterBoardPage } from '../features/production/PrinterBoardPage';
 
@@ -62,6 +63,7 @@ export const routes: AppRoute[] = [
   { path: '/inventory/transfer', label: 'Transfers', section: 'Operations', component: TransferPage },
   { path: '/inventory/adjust', label: 'Adjust & count', section: 'Operations', component: AdjustPage },
   { path: '/inventory/backorders', label: 'Backorders', section: 'Operations', component: BackordersPage },
+  { path: '/inventory/new-design', label: 'New product design', section: 'Operations', component: NewDesignPage },
   { path: '/labels', label: 'Barcode labels', section: 'Operations', component: LabelsPage },
   { path: '/production', label: 'Production orders', section: 'Operations', component: ProductionOrdersPage },
   { path: '/production/new', label: 'New production order', section: 'Operations', component: NewProductionOrderPage, hidden: true },

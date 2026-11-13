@@ -1,4 +1,5 @@
-import { Link, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ErrorNotice, Loading, PageHeader, Stat, shortLocation } from '../../app/ui';
 import { db, unwrap } from '../../lib/db';
 import { dateTime, grams, money, qty, sourceLabels, unitCost } from '../../lib/format';
@@ -87,6 +88,7 @@ export function ItemDetailPage() {
             <Link className="btn" to={`/inventory/transfer?item=${item.id}`}>Transfer</Link>
             <Link className="btn" to={`/inventory/adjust?item=${item.id}`}>Adjust / count</Link>
             <Link className="btn" to={`/labels?item=${item.id}`}>Print label</Link>
+            {item.item_type === 'finished' && <RetireButton family={item.product_family ?? ''} name={item.product_family ?? item.name} itemId={item.id} />}
           </>
         }
       />
@@ -236,5 +238,28 @@ export function ItemDetailPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+/** Product lifecycle: retire every color of a product. History and stock stay; it just stops being sold or planned. */
+function RetireButton({ family, name, itemId }: { family: string; name: string; itemId: string }) {
+  const navigate = useNavigate();
+  const [err, setErr] = useState<string | null>(null);
+  async function retire() {
+    if (!window.confirm(`Retire "${name}"? Every color stops showing in POS, sales orders and the customer portal. Past orders and stock movements stay.`)) return;
+    try {
+      const c = db();
+      const res = family ? await c.from('items').update({ is_active: false }).eq('product_family', family) : await c.from('items').update({ is_active: false }).eq('id', itemId);
+      if (res.error) throw new Error(res.error.message);
+      navigate('/inventory');
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    }
+  }
+  return (
+    <>
+      <button className="btn" onClick={retire}>Retire product</button>
+      {err && <span className="bad small">{err}</span>}
+    </>
   );
 }

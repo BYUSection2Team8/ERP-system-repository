@@ -45,6 +45,7 @@ const wows: { name: string; what: string; to: string; label: string }[] = [
   { name: 'Custom quote calculator', what: 'Price a one-off print from print hours and grams using live filament cost, machine and labor rates and the real failure rate; one click makes the item, BOM, sales order and production order. Customers can do it in the portal.', to: '/sales/quote', label: 'Custom quote' },
   { name: 'Printer board', what: 'Each P2S printer with its running job, progress and finish time, the queue, and 30-day utilization and scrap. Prints are assigned to the least busy printer when they start.', to: '/production/printers', label: 'Printer board' },
   { name: 'Automatic box selection', what: 'Packs each order into the fewest, smallest boxes (largest items first, 80% fill limit, longest side check) and explains it on a packing slip with packing time and packaging cost.', to: '/sales', label: 'Any shipped sales order' },
+  { name: 'New product design wizard', what: 'Print data for a new product (grams, print time, units per plate, components, size, colors) becomes one item per color with a barcode, bill of material, rolled-up cost and suggested price in one click; retire a product from its item page.', to: '/inventory/new-design', label: 'New product design' },
   { name: 'Capacity model', what: 'Cubic feet used at each location from item sizes and stock, plus the filament rack, with warnings at 85% and over 100% (warn, never block) and a QA Hold inspection-backlog flag.', to: '/', label: 'Dashboard' },
 ];
 
