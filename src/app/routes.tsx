@@ -31,6 +31,8 @@ import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
 import { ProfitLossPage } from '../features/finance/ProfitLossPage';
 import { InventoryValuationPage } from '../features/finance/InventoryValuationPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
+import { QuotePage } from '../features/quotes/QuotePage';
+import { PrinterBoardPage } from '../features/production/PrinterBoardPage';
 
 // Route registry: the single place that lists every screen.
 // The sidebar is generated from this list, so adding a module = one folder in
@@ -49,6 +51,7 @@ export const routes: AppRoute[] = [
   { path: '/pos', label: 'Point of sale', section: 'Sales', component: PosPage },
   { path: '/sales', label: 'Sales orders', section: 'Sales', component: SalesOrdersPage },
   { path: '/sales/new', label: 'New sales order', section: 'Sales', component: NewSalesOrderPage },
+  { path: '/sales/quote', label: 'Custom quote', section: 'Sales', component: QuotePage },
   { path: '/sales/:id', label: 'Sales order', section: 'Sales', component: SalesOrderDetailPage, hidden: true },
   { path: '/sales/:id/receipt', label: 'Receipt', section: 'Sales', component: ReceiptPage, hidden: true },
   { path: '/returns', label: 'Returns & exchanges', section: 'Sales', component: ReturnsPage },
@@ -62,6 +65,7 @@ export const routes: AppRoute[] = [
   { path: '/labels', label: 'Barcode labels', section: 'Operations', component: LabelsPage },
   { path: '/production', label: 'Production orders', section: 'Operations', component: ProductionOrdersPage },
   { path: '/production/new', label: 'New production order', section: 'Operations', component: NewProductionOrderPage, hidden: true },
+  { path: '/production/printers', label: 'Printer board', section: 'Operations', component: PrinterBoardPage },
   { path: '/production/report', label: 'Production report', section: 'Operations', component: ProductionReportPage },
   { path: '/production/:id', label: 'Production order', section: 'Operations', component: ProductionOrderDetailPage, hidden: true },
   { path: '/purchasing', label: 'Purchase orders', section: 'Purchasing', component: PurchaseOrdersPage },

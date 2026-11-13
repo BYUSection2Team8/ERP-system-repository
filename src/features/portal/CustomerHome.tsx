@@ -10,6 +10,7 @@ import type { DiscountType } from '../../lib/types';
 import { StatusBadge, TotalsTable, paymentLabels } from '../sales/salesShared';
 import { TrackingCard } from '../tracking/TrackingCard';
 import { trackingUrl } from '../tracking/tracking';
+import { QuoteFields, QuoteResult, emptyQuoteForm, quotePayload, useCustomQuote, type QuoteForm } from '../quotes/quoteShared';
 import {
   readCart,
   useCatalog,
@@ -53,6 +54,7 @@ export function CustomerHome() {
         <nav>
           <NavLink to="/" end>Shop</NavLink>
           <NavLink to="/cart">Cart{units > 0 ? ` (${units})` : ''}</NavLink>
+          <NavLink to="/quote">Custom print</NavLink>
           <NavLink to="/orders">My orders</NavLink>
         </nav>
         <div className="who">
@@ -77,6 +79,7 @@ export function CustomerHome() {
               path="/cart"
               element={<Cart lines={lines} setLines={setLines} variants={catalog.data.variants} locations={locations} loc={loc} setLocationId={setLocationId} canOrder={!!customer} />}
             />
+            <Route path="/quote" element={<PortalQuote locations={locations} loc={loc} setLocationId={setLocationId} canOrder={!!customer} />} />
             <Route path="/orders" element={<MyOrders />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -470,6 +473,61 @@ function MyOrders() {
             </div>
           );
         })}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+function PortalQuote({ locations, loc, setLocationId, canOrder }: { locations: PickupLocation[]; loc: PickupLocation | null; setLocationId: (id: string) => void; canOrder: boolean }) {
+  const navigate = useNavigate();
+  const [f, setF] = useState<QuoteForm>(emptyQuoteForm);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const payload = quotePayload(f);
+  const { quote, error, pricing } = useCustomQuote(payload);
+
+  async function order() {
+    if (!payload || !loc) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const id = await rpc<string>('portal_create_custom_print_order', { p: { ...payload, location_id: loc.id } });
+      navigate(`/orders?placed=${id}`);
+    } catch (e) {
+      setErr(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <h1>Custom print quote</h1>
+      <p className="muted">
+        Have a design? Enter the print time and filament weight your slicer shows (or your best guess) and get an instant price and ready date.
+        We print it on our Bambu Lab printers and you pick it up.
+      </p>
+      <div className="pos-grid">
+        <div className="card form">
+          <QuoteFields f={f} set={setF} allowShip={false} />
+          <LocationPicker locations={locations} loc={loc} setLocationId={setLocationId} />
+          <label>
+            Note for the shop (optional)
+            <input value={f.notes} maxLength={500} onChange={(e) => setF({ ...f, notes: e.target.value })} placeholder="Link to the model, size, finish…" />
+          </label>
+        </div>
+        <div className="card form pos-pay">
+          {!payload && <p className="muted">Enter a name, print time and grams to see the price.</p>}
+          {error && <div className="notice error">{error}</div>}
+          {pricing && !quote && <p className="muted">Pricing…</p>}
+          {quote && <QuoteResult q={quote} pricing={pricing} />}
+          {err && <div className="notice error">{err}</div>}
+          <button className="btn primary big" disabled={!canOrder || !quote || pricing || !!error || busy} onClick={order}>
+            {busy ? 'Placing…' : quote ? `Order it · ${money(quote.total)}` : 'Order it'}
+          </button>
+          <p className="muted small">Pay when you pick it up. You can follow the print live from My orders.</p>
+        </div>
+      </div>
     </>
   );
 }

@@ -5,6 +5,7 @@ import { db, unwrap } from '../../lib/db';
 import { date, money, qty, unitCost } from '../../lib/format';
 import type { ProductionMetrics, ProductionOrderRow } from '../../lib/types';
 import { useLiveQuery } from '../../lib/useLiveQuery';
+import { ShowMath } from '../../app/ShowMath';
 import { MoStatusBadge, addDays, hoursText, localToday, pctText } from './productionShared';
 
 interface ScrapRow {
@@ -95,10 +96,16 @@ export function ProductionReportPage() {
             <Stat label="Production cost" value={money(m.production_cost)} hint={`${m.orders_completed} completed · ${m.orders_open} still open`} />
           </div>
 
-          <div className="card muted small">
-            <strong>How these are calculated.</strong> First-pass yield = completed orders with no scrap ÷ completed orders. Scrap rate = scrapped units ÷ units started.
-            Cycle time = finish time − start time. On-time = finished on or before the due date. Unit yield = good units ÷ units started.
-          </div>
+          <ShowMath
+            rows={[
+              { label: `First-pass yield = completed orders with no scrap ÷ completed orders = ${Math.round(Number(m.first_pass_yield ?? 0) * m.orders_completed)} ÷ ${m.orders_completed}`, value: pctText(m.first_pass_yield), source: 'production orders finished in the range' },
+              { label: `Scrap rate = units scrapped ÷ units started = ${qty(m.qty_scrap)} ÷ ${qty(m.qty_started)}`, value: pctText(m.scrap_rate), source: 'good + scrapped recorded at completion' },
+              { label: `Unit yield = good units ÷ units started = ${qty(m.qty_good)} ÷ ${qty(m.qty_started)}`, value: pctText(m.unit_yield) },
+              { label: 'Average cycle time = average of (finish time − start time)', value: hoursText(m.avg_cycle_hours), source: 'start = components issued' },
+              { label: `On-time = finished on or before the due date = ${m.orders_on_time} ÷ ${m.orders_with_due}`, value: pctText(m.on_time_rate) },
+              { label: 'Scrap cost = scrapped units × rolled-up unit cost', value: money(m.scrap_cost), source: 'ledger 5300 Production scrap' },
+            ]}
+          />
 
           <h2>Scrap by reason</h2>
           {data.scrap.length === 0 ? (

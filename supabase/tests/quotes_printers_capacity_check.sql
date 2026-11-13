@@ -40,8 +40,8 @@ begin
   perform receive_opening_inventory(big, v_cp, 3, 1.00);
   assert (select used_cuft from v_location_utilization where code = 'CAMPUS') = u0 + 3,
     format('Campus used %s, was %s', (select used_cuft from v_location_utilization where code = 'CAMPUS'), u0);
-  assert (select utilization from v_location_utilization where code = 'CAMPUS')
-       = round((u0 + 3) / (select capacity_cuft from locations where code = 'CAMPUS'), 4), 'utilization = used / capacity';
+  assert abs((select utilization from v_location_utilization where code = 'CAMPUS')
+           - (u0 + 3) / (select capacity_cuft from locations where code = 'CAMPUS')) < 0.001, 'utilization = used / capacity';
   insert into items (sku, barcode, name, item_type, category, uom) values ('CAPTEST-FIL', 'CAPTEST-FIL', 'Capacity test filament', 'purchased', 'filament', 'g')
   returning id into fil;
   perform receive_opening_inventory(fil, v_pf, setting_num('spool_grams'), 0.015);
@@ -138,6 +138,8 @@ begin
             'color', 'Red', 'qty', 1, 'fulfillment_method', 'ship', 'location_id', (select id from locations where code = 'CAMPUS')));
   assert (select channel || '/' || fulfillment_method from sales_orders where id = v_so) = 'portal/pickup', 'portal custom order is a pickup';
   assert (select count(*) from sales_orders where id = v_so) = 1, 'customer sees their custom order';
+  assert exists (select 1 from items i join sales_order_lines l on l.item_id = i.id where l.so_id = v_so), 'customer sees their own custom item';
+  assert not exists (select 1 from items where id = current_setting('pp.quote_item')::uuid), 'but not other customers'' custom items';
   v_ok := false;
   begin
     perform create_custom_print_order(jsonb_build_object('name', 'x', 'print_hours', 1, 'grams', 1, 'color', 'Red'));

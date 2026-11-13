@@ -238,6 +238,13 @@ select l.id as location_id, l.code, l.name, l.capacity_cuft,
 alter table public.items add column if not exists is_custom boolean not null default false;
 create sequence if not exists public.custom_item_seq start 1001;
 
+-- Customers see catalog products, and custom items only when they ordered them.
+drop policy if exists catalog_read on public.items;
+create policy catalog_read on public.items for select to authenticated using (
+  is_active and category = 'product'
+  and (not is_custom or exists (select 1 from public.sales_order_lines l join public.sales_orders so on so.id = l.so_id
+                                 where l.item_id = items.id and so.customer_id = public.my_customer_id())));
+
 -- p = {name, description?, print_hours, grams, color (Red/White/Blue/Black),
 --      assembly_minutes?, qty?, fulfillment_method (pickup|ship), ship_state?}
 -- Returns the whole calculation with every input, for the "show the math" panel.

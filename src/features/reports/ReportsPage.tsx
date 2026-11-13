@@ -8,6 +8,7 @@ import { useLiveQuery } from '../../lib/useLiveQuery';
 import { addDays, localToday, pctText } from '../production/productionShared';
 import { loadReorderPlan, n, reorderTables, type ReorderRow } from '../purchasing/reorderShared';
 import { BarChart, DateRange, shortDate } from './reportsShared';
+import { ShowMath } from '../../app/ShowMath';
 
 // Manager reports (rubric capability 10). Every figure comes from a database
 // function or view over stored transactions, and reloads live.
@@ -103,6 +104,16 @@ function SalesReport({ from, to, range }: { from: string; to: string; range: Rea
             <Stat label="Average order" value={orders > 0 ? money((sum('gross_sales') - sum('discounts')) / orders) : '—'} hint="(Gross − discounts) ÷ orders" />
             <Stat label="Gross profit" value={money(sum('gross_profit'))} hint={net > 0 ? `${pctText(sum('gross_profit') / net)} of net sales` : 'Net sales − COGS'} />
           </div>
+          <ShowMath
+            rows={[
+              { label: 'Gross sales (ledger 4000 Product sales)', value: money(sum('gross_sales')), source: 'posted when an order is fulfilled' },
+              { label: '− Discounts (4100)', value: money(-sum('discounts')) },
+              { label: '− Returns (4400)', value: money(-sum('returns')), source: 'posted when a return is processed' },
+              { label: '= Net sales', value: money(net), strong: true },
+              { label: '− Cost of goods sold (5000, net of returns)', value: money(-sum('cogs')), source: 'weighted-average cost at fulfillment' },
+              { label: '= Gross profit', value: money(sum('gross_profit')), strong: true },
+            ]}
+          />
           <h2>Net sales {grain === 'week' ? 'per week' : 'per day'}</h2>
           <BarChart
             title={`Net sales per ${grain}`}
@@ -576,6 +587,9 @@ function FailureReport({ from, to, range }: { from: string; to: string; range: R
           <FailureTable rows={by('product').sort(sortRate)} first="Product" rateNote="Units scrapped ÷ units started for this product" />
           <h2>By color</h2>
           <FailureTable rows={by('color').sort(sortRate)} first="Color" rateNote="Units scrapped ÷ units started in this color" />
+          <h2>By printer</h2>
+          <FailureTable rows={by('printer').sort(sortRate)} first="Printer" rateNote="Units scrapped ÷ units started on this printer" />
+          <p className="muted small">Printers for the generated history were assigned when printers were added (the history's overdue-maintenance clogs and layer shifts in mid-Sept to mid-Oct are on Printer 3); new prints get a printer when they start. <Link to="/production/printers">Printer board</Link></p>
           <p className="muted small">
             From completed production orders (by finish date). Staff record failures on the production order (Report print failure, or Complete with scrap and a reason);
             the cost is the rolled-up unit cost of the scrapped units.

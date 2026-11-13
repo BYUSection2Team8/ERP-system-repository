@@ -114,6 +114,8 @@ export function ProductionOrderDetailPage() {
 
       <Steps mo={mo} />
 
+      {(mo.status === 'planned' || mo.status === 'in_progress' || mo.printer_id) && <PrinterPicker mo={mo} />}
+
       {mo.status === 'planned' && (
         <div className="card action-card">
           {short.length > 0 ? (
@@ -433,5 +435,41 @@ function ReportFailure({ mo, reasons }: { mo: ProductionOrder; reasons: ReasonCo
         <button type="button" className="btn link" onClick={() => setOpen(false)}>Never mind</button>
       </div>
     </form>
+  );
+}
+
+/** Which printer runs this print (assigned automatically at issue; staff can move it). */
+function PrinterPicker({ mo }: { mo: ProductionOrder }) {
+  const printers = useLiveQuery(
+    async () => unwrap<{ id: string; name: string; is_active: boolean }[]>(await db().from('printers').select('id, name, is_active').order('sort_order')),
+    ['printers'],
+  );
+  const [err, setErr] = useState<string | null>(null);
+  const editable = mo.status === 'planned' || mo.status === 'in_progress';
+  const current = printers.data?.find((p) => p.id === mo.printer_id);
+  return (
+    <div className="inline-form spaced">
+      <span className="muted">Printer:</span>
+      {editable ? (
+        <select
+          value={mo.printer_id ?? ''}
+          onChange={async (e) => {
+            setErr(null);
+            try {
+              await rpc('assign_printer', { p_mo_id: mo.id, p_printer_id: e.target.value });
+            } catch (x) {
+              setErr(errorMessage(x));
+            }
+          }}
+        >
+          <option value="" disabled>{mo.status === 'planned' ? 'Assigned automatically when started' : 'Not assigned'}</option>
+          {(printers.data ?? []).filter((p) => p.is_active).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      ) : (
+        <strong>{current?.name ?? '—'}</strong>
+      )}
+      <Link className="btn link" to="/production/printers">Printer board</Link>
+      {err && <span className="bad small">{err}</span>}
+    </div>
   );
 }

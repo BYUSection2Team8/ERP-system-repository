@@ -221,6 +221,7 @@ export interface ProductionOrder {
   output_location_id: string;
   status: MoStatus;
   so_id: string | null;
+  printer_id: string | null;
   due_date: string | null;
   qty_started: number;
   qty_good: number;

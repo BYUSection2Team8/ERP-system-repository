@@ -391,3 +391,28 @@ label.inline { flex-direction: row; align-items: center; gap: 0.4rem; font-weigh
 @media print {
   .receipt-qr img { width: 0.9in; height: 0.9in; }
 }
+
+/* Phase 10b: show the math, quotes, printer board, capacity */
+.show-math { margin: 0.5rem 0 0.75rem; font-size: 0.85rem; }
+.show-math summary { cursor: pointer; color: var(--navy-2); font-weight: 600; font-size: 0.82rem; list-style: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+.show-math summary::before { content: '∑'; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; background: #eef4fb; font-size: 0.75rem; }
+.show-math[open] summary { margin-bottom: 0.4rem; }
+.show-math .formula { background: #f6f8fb; border-radius: 6px; padding: 0.4rem 0.6rem; margin-bottom: 0.4rem; color: var(--text); }
+.math-table { width: 100%; border-collapse: collapse; }
+.math-table td { padding: 0.25rem 0.4rem; border-top: 1px dashed var(--border); vertical-align: top; }
+.math-table td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.math-table tr.strong td { font-weight: 700; }
+.quote-price { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.4rem; }
+.quote-price strong { font-size: 1.8rem; color: var(--navy); }
+.printer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.printer-card { display: flex; flex-direction: column; gap: 0.4rem; border-top: 4px solid var(--border); }
+.printer-card.busy { border-top-color: var(--teal); }
+.printer-head { display: flex; justify-content: space-between; align-items: center; }
+.printer-job { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.4rem 0; border-top: 1px dashed var(--border); }
+.printer-stats { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; }
+.space-card { display: flex; flex-direction: column; gap: 0.6rem; max-width: 760px; }
+.space-label { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9rem; }
+.space-bar { height: 10px; background: #eef1f5; border-radius: 99px; overflow: hidden; margin: 0.2rem 0; }
+.space-bar span { display: block; height: 100%; background: var(--teal-dark); border-radius: 99px; }
+.space-bar.warn span { background: #e0a100; }
+.space-bar.bad span { background: var(--error-text); }
