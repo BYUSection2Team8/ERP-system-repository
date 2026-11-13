@@ -31,9 +31,6 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'portal.student@example.com'),
   ('00000000-0000-0000-0000-0000000000d2', 'portal.unlinked@example.com');
 
-create temp table t_ids (k text primary key, id uuid);
-grant all on t_ids to authenticated;
-
 do $$
 declare
   v_cp uuid := (select id from locations where code = 'CAMPUS');
@@ -42,6 +39,7 @@ declare
   fg uuid; so uuid; v_line uuid;
   r record;
   v_today date := (now() at time zone setting_text('time_zone'))::date;
+  ids jsonb := '{}';
 begin
   -- ------------------------------------------------------------- reports
   insert into items (sku, barcode, name, item_type, category, uom, price, stocking_policy)
@@ -89,30 +87,31 @@ begin
   -- ------------------------------------------------------ portal set-up
   assert (select p.customer_id from profiles p where p.id = '00000000-0000-0000-0000-0000000000d1')
        = (select id from customers where email = 'portal.student@example.com'), 'portal login linked to its customer';
-  insert into t_ids values ('student', (select id from customers where email = 'portal.student@example.com'));
-  insert into t_ids values ('other', (select id from customers where email = 'portal.other@example.com'));
+  ids := ids || jsonb_build_object('student', (select id from customers where email = 'portal.student@example.com'));
+  ids := ids || jsonb_build_object('other', (select id from customers where email = 'portal.other@example.com'));
 
   insert into items (sku, barcode, name, item_type, category, uom, price, stocking_policy)
   values ('PORTAL-FG', 'PORTAL-FG', 'Portal stocked product', 'finished', 'product', 'ea', 10, 'stock') returning id into fg;
-  insert into t_ids values ('fg', fg);
+  ids := ids || jsonb_build_object('fg', fg);
   perform receive_opening_inventory(fg, v_cp, 5, 2.00);
   insert into items (sku, barcode, name, item_type, category, uom, price, stocking_policy, lead_time_days)
   values ('PORTAL-MTO', 'PORTAL-MTO', 'Portal made-to-order product', 'finished', 'product', 'ea', 20, 'make_to_order', 3)
   returning id into fg;
-  insert into t_ids values ('mto', fg);
+  ids := ids || jsonb_build_object('mto', fg);
   insert into items (sku, barcode, name, item_type, category, uom, price, stocking_policy, season_start, season_end)
   values ('PORTAL-SEAS', 'PORTAL-SEAS', 'Portal out-of-season product', 'finished', 'product', 'ea', 5, 'seasonal',
           to_char(v_today + 10, 'MM-DD'), to_char(v_today + 11, 'MM-DD'))
   returning id into fg;
-  insert into t_ids values ('seas', fg);
-  insert into t_ids values ('comp', (select id from items where category = 'component' limit 1));
-  insert into t_ids values ('campus', v_cp);
-  insert into t_ids values ('qa', (select id from locations where code = 'QA_HOLD'));
+  ids := ids || jsonb_build_object('seas', fg);
+  ids := ids || jsonb_build_object('comp', (select id from items where category = 'component' limit 1));
+  ids := ids || jsonb_build_object('campus', v_cp);
+  ids := ids || jsonb_build_object('qa', (select id from locations where code = 'QA_HOLD'));
   -- Another customer's order, placed by staff.
-  insert into t_ids values ('other_so', create_sales_order(jsonb_build_object(
-    'customer_id', (select id from t_ids where k = 'other'), 'fulfillment_method', 'pickup',
-    'lines', jsonb_build_array(jsonb_build_object('item_id', (select id from t_ids where k = 'fg'), 'qty', 1)))));
+  ids := ids || jsonb_build_object('other_so', create_sales_order(jsonb_build_object(
+    'customer_id', (ids->>'other')::uuid, 'fulfillment_method', 'pickup',
+    'lines', jsonb_build_array(jsonb_build_object('item_id', (ids->>'fg')::uuid, 'qty', 1)))));
   update live_signals set changed_at = '2000-01-01' where topic = 'stock';
+  perform set_config('pp.test_ids', ids::text, true);
 end $$;
 
 -- ------------------------------------------------------- as the portal customer
@@ -122,7 +121,7 @@ select set_config('request.jwt.claims',
 
 do $$
 declare
-  ids jsonb := (select jsonb_object_agg(k, id) from t_ids);
+  ids jsonb := current_setting('pp.test_ids')::jsonb;
   v_byu numeric := setting_num('byu_discount_pct');
   v_rate numeric := setting_num('sales_tax_rate');
   q jsonb; v_so uuid; v_so2 uuid; v_ok boolean;
@@ -227,11 +226,11 @@ end $$;
 select set_config('request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-0000000000d2","role":"authenticated"}', true);
 do $$
-declare v_ok boolean := false;
+declare v_ok boolean := false; ids jsonb := current_setting('pp.test_ids')::jsonb;
 begin
   begin
-    perform portal_place_order(jsonb_build_object('location_id', (select id from t_ids where k = 'campus'),
-      'lines', jsonb_build_array(jsonb_build_object('item_id', (select id from t_ids where k = 'fg'), 'qty', 1))));
+    perform portal_place_order(jsonb_build_object('location_id', ids->>'campus',
+      'lines', jsonb_build_array(jsonb_build_object('item_id', ids->>'fg', 'qty', 1))));
   exception when others then v_ok := sqlerrm like '%not linked%';
   end;
   assert v_ok, 'unlinked login is told to contact us';
