@@ -7,6 +7,7 @@ import type { LedgerRow } from '../../lib/types';
 import { channelLabels, methodLabels, paymentLabels, StatusBadge, TotalsTable } from './salesShared';
 import { useOrder, type OrderView } from './useOrder';
 import { TrackingCard } from '../tracking/TrackingCard';
+import { PackingSlip } from './PackingSlip';
 
 const journalNames: Record<string, string> = {
   sale: 'Sale (fulfillment)',
@@ -69,6 +70,8 @@ export function SalesOrderDetailPage() {
       {order.status !== 'cancelled' && (
         <TrackingCard soId={order.id} token={order.tracking_token} orderNo={order.order_no} defaultEmail={order.customer_email ?? customer?.email} toName={customer?.contact_name ?? customer?.name} />
       )}
+
+      {order.status !== 'cancelled' && order.fulfillment_method !== 'counter' && <PackingSlip soId={order.id} />}
 
       {order.status === 'placed' && (
         <div className="card action-card">

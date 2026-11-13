@@ -89,8 +89,11 @@ begin
 
   -- ------------------------------------------------- quote -> order (staff)
   insert into customers (name, state, email) values ('Quote Test Customer', 'UT', 'quote.customer@example.com') returning id into v_cust;
+  insert into customers (name, state) values ('Quote Other Customer', 'UT');
   update profiles set customer_id = v_cust where id = '00000000-0000-0000-0000-0000000000f1';
-  so := create_custom_print_order(p || jsonb_build_object('customer_id', v_cust));
+  -- Staff order for ANOTHER customer (the portal user must not see this custom item).
+  so := create_custom_print_order(p || jsonb_build_object('customer_id',
+          (select id from customers where name = 'Quote Other Customer')));
   select l.item_id into it from sales_order_lines l where l.so_id = so;
   assert (select is_custom and stocking_policy = 'make_to_order' and price = v_price from items where id = it), 'custom item at the quoted price';
   assert (select qty_per_plate from boms where parent_item_id = it and component_item_id = v_blue) = 50, '50 g BOM';

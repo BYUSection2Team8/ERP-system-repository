@@ -501,7 +501,7 @@ function SupplierPerformanceReport() {
 
 // ---------------------------------------------------------------------------
 interface FailureRow {
-  dimension: 'total' | 'product' | 'color' | 'reason' | 'week';
+  dimension: 'total' | 'product' | 'color' | 'printer' | 'reason' | 'week';
   key: string;
   label: string;
   orders: number;

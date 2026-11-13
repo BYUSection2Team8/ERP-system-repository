@@ -48,7 +48,7 @@ async function load() {
   const [printers, jobs, stats] = await Promise.all([
     c.from('printers').select('*').order('sort_order').then(unwrap<Printer[]>),
     c.from('production_orders').select('id, mo_no, status, printer_id, plates, qty_started, qty_planned, started_at, due_date, so_id, item:items(name, print_minutes)')
-      .in('status', ['planned', 'in_progress']).order('created_at').then(unwrap<Job[]>),
+      .in('status', ['planned', 'in_progress']).order('created_at').then((r) => unwrap(r) as unknown as Job[]),
     c.rpc('printer_stats', { p_from: addDays(today, -29), p_to: today }).then(unwrap<Stats[]>),
   ]);
   const running = jobs.filter((j) => j.status === 'in_progress');
