@@ -979,7 +979,12 @@ begin
     values ('history_complete', 'true', 'boolean', 'history', 'History complete',
             'seed/002 finished generating the 6-month history.')
     on conflict (key) do update set value = 'true', updated_at = now();
-    perform link_customer_logins();
+    -- Link existing portal logins (009_customer_logins.sql); skipped if 009 is not applied yet.
+    if to_regprocedure('public.link_customer_logins()') is not null then
+      perform public.link_customer_logins();
+    else
+      raise notice 'Portal logins not linked: apply migrations/009_customer_logins.sql, then run: select link_customer_logins();';
+    end if;
   end if;
 
   raise notice 'History: % day(s) generated this run in % s, through %; % call(s) skipped.',
