@@ -323,3 +323,6 @@ label.inline { flex-direction: row; align-items: center; gap: 0.4rem; font-weigh
   .supplier-cards { grid-template-columns: 1fr; }
 }
 .table tr.row-alert td { background: #fffaf0; }
+.totals.pl td.indent { padding-left: 1.2rem; }
+.totals.pl tr.subtotal td { border-top: 1px solid var(--border); font-weight: 600; }
+.totals.pl tr.grand td { font-size: 1.1rem; }

@@ -25,6 +25,11 @@ import { SupplierDetailPage } from '../features/purchasing/SupplierDetailPage';
 import { ReorderPlanningPage } from '../features/purchasing/ReorderPlanningPage';
 import { PeriodicReviewPage } from '../features/purchasing/PeriodicReviewPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
+import { ReturnsPage } from '../features/returns/ReturnsPage';
+import { NewReturnPage } from '../features/returns/NewReturnPage';
+import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
+import { ProfitLossPage } from '../features/finance/ProfitLossPage';
+import { InventoryValuationPage } from '../features/finance/InventoryValuationPage';
 
 // Route registry: the single place that lists every screen.
 // The sidebar is generated from this list, so adding a module = one folder in
@@ -44,6 +49,9 @@ export const routes: AppRoute[] = [
   { path: '/sales/new', label: 'New sales order', section: 'Sales', component: NewSalesOrderPage },
   { path: '/sales/:id', label: 'Sales order', section: 'Sales', component: SalesOrderDetailPage, hidden: true },
   { path: '/sales/:id/receipt', label: 'Receipt', section: 'Sales', component: ReceiptPage, hidden: true },
+  { path: '/returns', label: 'Returns & exchanges', section: 'Sales', component: ReturnsPage },
+  { path: '/returns/new', label: 'New return', section: 'Sales', component: NewReturnPage, hidden: true },
+  { path: '/returns/:id', label: 'Return', section: 'Sales', component: ReturnDetailPage, hidden: true },
   { path: '/inventory', label: 'Inventory', section: 'Operations', component: InventoryPage },
   { path: '/inventory/item/:id', label: 'Item', section: 'Operations', component: ItemDetailPage, hidden: true },
   { path: '/inventory/transfer', label: 'Transfers', section: 'Operations', component: TransferPage },
@@ -63,6 +71,8 @@ export const routes: AppRoute[] = [
   { path: '/suppliers/new', label: 'Add supplier', section: 'Purchasing', component: SupplierDetailPage, hidden: true },
   { path: '/suppliers/:id', label: 'Supplier', section: 'Purchasing', component: SupplierDetailPage, hidden: true },
   { path: '/mrp', label: 'MRP', section: 'Purchasing', component: MrpPage },
+  { path: '/finance/pl', label: 'Profit & loss', section: 'Finance', component: ProfitLossPage },
+  { path: '/finance/inventory', label: 'Inventory valuation & turnover', section: 'Finance', component: InventoryValuationPage },
   { path: '/settings', label: 'Settings', section: 'System', component: SettingsPage },
   { path: '/about', label: 'About this system', section: 'System', component: AboutPage },
 ];

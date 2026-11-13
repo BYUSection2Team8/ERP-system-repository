@@ -54,6 +54,9 @@ export function SalesOrderDetailPage() {
         }
         actions={
           <>
+            {(order.status === 'fulfilled' || order.status === 'closed') && (
+              <Link className="btn" to={`/returns/new?so=${order.id}`}>Return / exchange</Link>
+            )}
             <Link className="btn" to={`/sales/${order.id}/receipt`}>{order.status === 'placed' ? 'Print confirmation' : 'Print receipt'}</Link>
             <Link className="btn" to="/sales">All orders</Link>
           </>

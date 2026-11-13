@@ -436,3 +436,68 @@ export interface ApOpen {
   balance: number;
   is_overdue: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Returns and financials (Phase 8)
+// ---------------------------------------------------------------------------
+export interface SaleReturn {
+  id: string;
+  return_no: string;
+  so_id: string;
+  customer_id: string | null;
+  return_type: 'refund' | 'exchange';
+  returned_at: string;
+  merchandise_credit: number;
+  tax_credit: number;
+  restocking_fee: number;
+  exchange_so_id: string | null;
+  exchange_total: number;
+  refund_amount: number;
+  notes: string | null;
+  created_by: string | null;
+}
+
+export interface ReturnLine {
+  id: string;
+  return_id: string;
+  so_line_id: string;
+  item_id: string;
+  qty: number;
+  reason_code: string;
+  disposition: 'restock' | 'qa_hold';
+  location_id: string;
+  net_unit_price: number;
+  unit_cost: number;
+}
+
+/** What quote_return returns: the return priced but not saved. */
+export interface ReturnQuote {
+  return_type: 'refund' | 'exchange';
+  merchandise_credit: number;
+  tax_credit: number;
+  restocking_fee: number;
+  exchange_total: number;
+  refund_amount: number;
+  refund_to: string;
+  exchange: { subtotal: number; discount_amount: number; tax_amount: number; total: number; will_ship_now: boolean } | null;
+  lines: { so_line_id: string; item_id: string; qty: number; reason_code: string; disposition: 'restock' | 'qa_hold'; location_id: string; net_unit_price: number; unit_cost: number }[];
+}
+
+export interface PlLine {
+  line_no: number;
+  label: string;
+  account_code: string | null;
+  amount: number;
+  kind: 'line' | 'subtotal' | 'total';
+}
+
+export interface Turnover {
+  cogs: number;
+  begin_inventory: number;
+  end_inventory: number;
+  avg_inventory: number;
+  days: number;
+  turnover: number | null;
+  annualized_turnover: number | null;
+  days_of_inventory: number | null;
+}

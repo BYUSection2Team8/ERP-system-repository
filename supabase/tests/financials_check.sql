@@ -90,9 +90,9 @@ begin
   assert r.turnover = round(8 / (v_x + 948 / 31.0), 2), format('turnover %s', r.turnover);
 
   -- ------------------------------------------------------------ valuation
-  assert (select qty_on_hand from v_inventory_by_location where item_id = fg and location_id = v_cp) = 8,
-    '10 - 3 + 1 - 1 = 8 at Campus';
-  assert (select inventory_value from v_inventory_by_location where item_id = fg and location_id = v_cp) = 32, '8 x $4.00';
+  assert (select qty_on_hand from v_inventory_by_location where item_id = fg and location_id = v_cp) = 7,
+    '10 - 3 + 1 - 1 = 7 at Campus';
+  assert (select inventory_value from v_inventory_by_location where item_id = fg and location_id = v_cp) = 28, '7 x $4.00';
   assert abs((select sum(inventory_value) from v_inventory_by_location)
              - (select sum(inventory_value) from v_inventory_valuation)) < 1,
     'value by location adds up to the item valuation';
