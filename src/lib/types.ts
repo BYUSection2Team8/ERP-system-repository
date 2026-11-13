@@ -155,6 +155,7 @@ export interface SalesOrderLine {
 
 /** What quote_sales_order returns: the order priced but not saved. */
 export interface Quote {
+  shipping?: { zone: number; weight_oz: number; postage: number; handling: number; total: number } | null;
   customer_id: string | null;
   customer_name: string | null;
   channel: string;

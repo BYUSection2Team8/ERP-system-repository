@@ -425,6 +425,11 @@ export function QuotePanel({
   return (
     <div className={pricing ? 'repricing' : ''}>
       <TotalsTable t={quote} reasonText={reason} />
+      {quote.shipping && (
+        <p className="muted small" style={{ margin: '0.25rem 0' }}>
+          Shipping: zone {quote.shipping.zone} from Stansbury Park, {Number(quote.shipping.weight_oz)} oz parcel → postage {money(quote.shipping.postage)} + handling {money(quote.shipping.handling)}
+        </p>
+      )}
       <p className="muted small">Priced by the database from item prices and settings.</p>
     </div>
   );

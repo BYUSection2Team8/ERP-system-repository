@@ -13,6 +13,7 @@ Inventory, Returns & Exchanges, Production, Financials, MRP + 2–4 more capabil
 
 - [x] **Supabase SQL Editor** (done 2026-11-12): paste and Run, in order, `supabase/migrations/012_reports_portal.sql`, `013_tracking_failures.sql`, `014_quotes_printers_capacity.sql`, `015_box_selection.sql` → each "Success. No rows returned."
 - [x] (done 2026-11-12) Paste and Run `supabase/migrations/016_new_design.sql`, then `supabase/tests/new_design_check.sql` → result **NEW DESIGN CHECKS PASSED** (or re-run Paste 2, which now includes it).
+- [ ] Paste and Run, in order, `supabase/migrations/017_spools.sql`, `018_demand_simulator.sql`, `019_capacity_overrides.sql`, `020_shipping_zones.sql`; then Paste 2 (or their check scripts: spools, demand_simulator, capacity_overrides, shipping_zones).
 - [ ] Run **Paste 2** (`supabase/paste/2_run_checks.sql`) → `ALL CHECKS PASSED` (now includes the reports/portal and tracking/failure checks).
 - [ ] **Portal logins** (rubric 11): Supabase → Authentication → Users → Add user (tick Auto Confirm) for at least **Demo Customer** (`demo.customer@example.com`) and one student (e.g. `ethan.caldwell@example.com`, BYU discount). They link to their customer records by email. If made before 009 ran: SQL Editor → `select link_customer_logins();`
 - [ ] **Three staff logins** (rubric 12): add two more users, then for each: `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`
@@ -77,7 +78,7 @@ Each of these should be refused with a plain-English message and save nothing. C
 6. **Returns**: return one Dragon as "Quality defect" → QA Hold, full refund; exchange a red for a blue.
 7. **Financials**: P&L (sales, returns, COGS, production scrap = cost of poor quality), valuation, turnover — all moved live.
 8. **Reports**: sales by week, top sellers, low stock with order-by dates, supplier performance, print failures (Airplane warps most; mid-Sept–Oct printer maintenance spike).
-   **Wow extras**: New product design (create a product live, sell it at the POS), Custom quote (Show the math, accept → order + production), Printer board, packing slip on a shipped order, Space used on the Dashboard.
+   **Wow extras**: Demand simulator ("Black Friday" → watch MRP and backorders react), Filament spools (scan a spool into a printer), New product design (create a product live, sell it at the POS), Custom quote (Show the math, accept → order + production), Printer board, packing slip on a shipped order, Space used on the Dashboard.
 9. **Purchasing**: supplier scorecard (VXB = Watch/Replace), reorder planning: change ordering cost in Settings → EOQ grows by √2.
 10. **About this system**: tools + database + the capability map.
 
