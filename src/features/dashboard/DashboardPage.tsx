@@ -4,6 +4,7 @@ import { db, unwrap } from '../../lib/db';
 import { dateTime, money } from '../../lib/format';
 import { useLiveQuery } from '../../lib/useLiveQuery';
 import { ShowMath } from '../../app/ShowMath';
+import { DemandSimulator } from '../sales/DemandSimulator';
 import { addDays, localToday } from '../production/productionShared';
 
 interface Space {
@@ -92,6 +93,8 @@ export function DashboardPage() {
               tone={data.backorderLines > 0 ? 'warn' : undefined}
             />
           </div>
+
+          <DemandSimulator />
 
           <h2>Space used</h2>
           {(() => {

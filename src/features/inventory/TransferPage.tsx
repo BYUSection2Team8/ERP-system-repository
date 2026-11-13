@@ -7,6 +7,18 @@ import type { Item } from '../../lib/types';
 import { ScanItemInput } from '../barcodes/ScanItemInput';
 import { useInventoryData } from './useInventoryData';
 
+interface SpaceCheck {
+  location: string;
+  capacity_cuft: number | null;
+  used_cuft: number;
+  adding_cuft: number;
+  projected_cuft: number;
+  projected_utilization: number | null;
+  warn_pct: number;
+  level: 'ok' | 'warn' | 'over';
+  suggestion: string | null;
+}
+
 interface Line {
   item: Item;
   qty: string;
@@ -21,6 +33,29 @@ export function TransferPage() {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [space, setSpace] = useState<SpaceCheck | null>(null);
+  const [ovReason, setOvReason] = useState('');
+  const [ovNote, setOvNote] = useState('');
+  const linesKey = JSON.stringify(lines.map((l) => ({ item_id: l.item.id, qty: Number(l.qty) || 0 })));
+
+  // Capacity: how full the destination would be (warn, never block; over 100% needs a reason).
+  useEffect(() => {
+    if (!to || lines.length === 0) {
+      setSpace(null);
+      return;
+    }
+    let live = true;
+    const t = window.setTimeout(() => {
+      rpc<SpaceCheck>('capacity_check', { p_location: to, p_lines: JSON.parse(linesKey) })
+        .then((r) => live && setSpace(r))
+        .catch(() => live && setSpace(null));
+    }, 300);
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [to, linesKey]);
 
   // Defaults: Fulfillment Center -> Campus Counter (restocking the counter).
   useEffect(() => {
@@ -62,9 +97,13 @@ export function TransferPage() {
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (from === to) return setResult({ ok: false, text: 'Choose two different locations.' });
+    if (space?.level === 'over' && !ovReason) return setResult({ ok: false, text: 'This puts the destination over capacity: choose a manager reason to approve it.' });
     setBusy(true);
     setResult(null);
     try {
+      if (space?.level === 'over') {
+        await rpc('log_capacity_override', { p_location: to, p_reason: ovReason, p_note: ovNote || null, p_context: 'Transfer', p_projected: space.projected_utilization });
+      }
       await rpc('transfer_inventory', {
         p_from: from,
         p_to: to,
@@ -157,6 +196,27 @@ export function TransferPage() {
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Restock counter for Friday" />
         </label>
 
+        {space && space.level !== 'ok' && (
+          <div className={`notice ${space.level === 'over' ? 'error' : 'warn'}`}>
+            <strong>{space.location} would be {(Number(space.projected_utilization) * 100).toFixed(0)}% full</strong> ({Number(space.projected_cuft)} of {space.capacity_cuft} cu ft, +{Number(space.adding_cuft)} cu ft).{' '}
+            {space.suggestion}
+            {space.level === 'over' && (
+              <div className="form-row" style={{ marginTop: '0.5rem' }}>
+                <label>
+                  Manager override reason
+                  <select value={ovReason} onChange={(e) => setOvReason(e.target.value)}>
+                    <option value="">Choose…</option>
+                    {data.reasons.filter((r) => r.category === 'override').map((r) => <option key={r.code} value={r.code}>{r.description}</option>)}
+                  </select>
+                </label>
+                <label className="grow">
+                  Note
+                  <input value={ovNote} onChange={(e) => setOvNote(e.target.value)} placeholder="Who approved, until when" />
+                </label>
+              </div>
+            )}
+          </div>
+        )}
         {problems.length > 0 && <div className="notice warn">{problems.map((p) => <div key={p}>{p}</div>)}</div>}
         {result && <div className={`notice ${result.ok ? 'ok' : 'error'}`}>{result.text} {result.ok && <Link to="/inventory">View inventory</Link>}</div>}
 

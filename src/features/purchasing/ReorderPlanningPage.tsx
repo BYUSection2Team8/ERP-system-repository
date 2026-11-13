@@ -8,6 +8,13 @@ import { addDays, localToday } from '../production/productionShared';
 import { useCreatePos } from './purchasingShared';
 import { loadReorderPlan, n, reorderTables, type ReorderRow } from './reorderShared';
 
+interface RackRoom {
+  rack_spools: number;
+  spools_on_hand: number;
+  spools_on_order: number;
+  room: number;
+}
+
 type Filter = 'below' | 'purchased' | 'made' | 'all';
 
 export function ReorderPlanningPage() {
@@ -17,6 +24,7 @@ export function ReorderPlanningPage() {
   const [planning, setPlanning] = useState<string | null>(null);
   const po = useCreatePos();
   const today = localToday();
+  const rack = useLiveQuery(async () => (await rpc<RackRoom[]>('filament_rack_room', {}))[0], ['inventory_txn', 'purchase_orders', 'purchase_order_lines', 'settings']);
 
   if (loading) return <Loading what="reorder plan" />;
   if (error) return <ErrorNotice message={error} />;
@@ -34,9 +42,27 @@ export function ReorderPlanningPage() {
   const makeBelow = below.filter((r) => r.replenish_by === 'production');
 
   async function orderFrom(supplierId: string) {
-    const lines = (bySupplier.get(supplierId) ?? []).map((r) => ({ item_id: r.item_id, qty: Number(r.suggested_units) }));
-    const id = await po.create(supplierId, lines, 'reorder', 'Reorder point reached');
-    if (id) setResult({ ok: true, text: <>Purchase order sent. <Link to={`/purchasing/${id}`}>Open it</Link>. The items' inventory position now includes it.</> });
+    // Space-capped EOQ: filament spools may not exceed the room left on the rack.
+    let room = Number(rack.data?.room ?? Infinity);
+    const capped: string[] = [];
+    const lines = (bySupplier.get(supplierId) ?? [])
+      .map((r) => {
+        let q = Number(r.suggested_units);
+        if (r.category === 'filament') {
+          const fit = Math.max(0, Math.min(q, room));
+          if (fit < q) capped.push(`${r.name}: EOQ says ${q} spools, the rack has room for ${fit}`);
+          q = fit;
+          room -= q;
+        }
+        return { item_id: r.item_id, qty: q };
+      })
+      .filter((l) => l.qty > 0);
+    if (lines.length === 0) {
+      setResult({ ok: false, text: <>The filament rack is full ({capped.join('; ')}). Use spools first or raise the rack size in Settings.</> });
+      return;
+    }
+    const id = await po.create(supplierId, lines, 'reorder', capped.length ? `Reorder point reached; capped by rack space (${capped.join('; ')})` : 'Reorder point reached');
+    if (id) setResult({ ok: true, text: <>Purchase order sent. <Link to={`/purchasing/${id}`}>Open it</Link>. The items' inventory position now includes it.{capped.length > 0 && <> Capped by rack space: {capped.join('; ')}.</>}</> });
   }
 
   async function plan(r: ReorderRow) {
@@ -71,6 +97,14 @@ export function ReorderPlanningPage() {
       />
 
       <div className="stats">
+        {rack.data && (
+          <Stat
+            label="Filament rack room"
+            value={`${Number(rack.data.room)} spools`}
+            hint={`${Number(rack.data.rack_spools)} rack − ${Number(rack.data.spools_on_hand)} on hand − ${Number(rack.data.spools_on_order)} on order; filament POs are capped to fit`}
+            tone={Number(rack.data.room) < 5 ? 'warn' : undefined}
+          />
+        )}
         <Stat label="At or below reorder point" value={below.length} tone={below.length ? 'warn' : undefined} hint={`${bySupplier.size} supplier(s), ${makeBelow.length} made item(s)`} />
         <Stat label="Ordering cost per PO (S)" value={money(s.get('ordering_cost'))} hint={`Setup per production batch ${money(s.get('production_setup_cost'))}`} />
         <Stat label="Carrying rate (H = cost × rate)" value={`${((s.get('carrying_rate_annual') ?? 0) * 100).toFixed(0)}% / yr`} hint={`Seasonal items ${((s.get('carrying_rate_seasonal') ?? 0) * 100).toFixed(0)}%`} />
