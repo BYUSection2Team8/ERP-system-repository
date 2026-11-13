@@ -22,6 +22,7 @@ checks=(
   supabase/tests/box_selection_check.sql
   supabase/tests/new_design_check.sql
   supabase/tests/spools_check.sql
+  supabase/tests/demand_simulator_check.sql
 )
 
 {

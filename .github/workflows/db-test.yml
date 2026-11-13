@@ -94,6 +94,9 @@ jobs:
       - name: Spool tracking check (Phase 10)
         run: bash supabase/tests/run_sql.sh supabase/tests/spools_check.sql
 
+      - name: Demand simulator check (Phase 10)
+        run: bash supabase/tests/run_sql.sh supabase/tests/demand_simulator_check.sql
+
       # The SQL Editor sends a whole paste as ONE batch, so test the paste files that way
       # on a second, empty database.
       - name: Paste files work as single batches (like the Supabase SQL Editor)
