@@ -136,11 +136,11 @@ with p as (
          round(b.avg_daily * 365, 2) as annual_demand,
          round(b.unit_cost * b.carrying_rate, 6) as holding_cost_unit,
          round(b.avg_daily * b.lead_days, 2) as lead_time_demand,
-         round(b.z * b.sd_daily * sqrt(b.lead_days), 2) as safety_stock,
-         round(b.avg_daily * b.lead_days + b.z * b.sd_daily * sqrt(b.lead_days), 2) as rop_calc,
+         round(b.z * b.sd_daily * sqrt(b.lead_days::numeric), 2) as safety_stock,
+         round(b.avg_daily * b.lead_days + b.z * b.sd_daily * sqrt(b.lead_days::numeric), 2) as rop_calc,
          case when b.avg_daily > 0 and b.unit_cost * b.carrying_rate > 0
               then round(sqrt(2 * b.avg_daily * 365 * b.order_cost / (b.unit_cost * b.carrying_rate)), 2) end as eoq,
-         round(b.avg_daily * (b.r_days + b.lead_days) + b.z * b.sd_daily * sqrt(b.r_days + b.lead_days), 2) as order_up_to,
+         round(b.avg_daily * (b.r_days + b.lead_days) + b.z * b.sd_daily * sqrt((b.r_days + b.lead_days)::numeric), 2) as order_up_to,
          b.on_hand + b.on_order - b.committed as position
     from base b
 ), fin as (

@@ -75,15 +75,16 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Phase 2 — Starter seed data (applied in Supabase; seed check passed)
 - [x] Phase 3 — Inventory + Barcodes (live-site checklist passed)
 - [x] Phase 4 — POS + Sales Orders (007 applied in Supabase; all checks passed. Live-site checklist deferred to Phase 11)
-- [ ] Phase 5 — Production + MRP
-- [ ] Phase 6 — Full customers + 6-month history
-- [ ] Phase 7 — Purchasing + Suppliers
+- [x] Phase 5 — Production + MRP (CI green; 008 not yet pasted into Supabase — see "Phases 5–7 Supabase steps")
+- [x] Phase 6 — Full customers + 6-month history (CI green; 009 + seed/002 not yet run in Supabase)
+- [x] Phase 7 — Purchasing + Suppliers (CI green; 010 not yet pasted into Supabase)
 - [ ] Phase 8 — Returns + Financials
 - [ ] Phase 9 — Reports + Portal + Realtime
 - [ ] Phase 10 — Wow factors (stretch)
 - [ ] Phase 11 — Polish + demo prep
 
-**Next step:** Phase 5 — Production + MRP. Start a fresh AI session: "Read HANDOFF.md and do Phase 5."
+**Next step:** a human runs the "Phases 5–7 Supabase steps" below, then Phase 8 — Returns + Financials. Start a fresh AI session: "Read HANDOFF.md and do Phase 8."
+**Reading CI without signing in:** every SQL file, the type check and the build report their result as a GitHub *annotation* (job logs need a login, annotations don't): `curl -s https://api.github.com/repos/BYUSection2Team8/ERP-system-repository/check-runs/<job id>/annotations`. Job ids come from `.../actions/runs?head_sha=<commit>` → `jobs_url`. A failing SQL file shows the database error text there.
 **Live-site checklists are deferred to Phase 11** (team decision 2026-11-12): from Phase 4 on, each phase ends when CI is green and Paste 2 passes in Supabase. Write that phase's checklist into this file anyway, and run them all in Phase 11.
 Database changes from now on: add a new numbered migration, run `bash supabase/make_paste_files.sh`, and paste only the NEW migration into the SQL Editor (Paste 1 is for an empty database). Paste 2 (checks) can be re-run any time.
 New staff logins: add the user in Supabase → Authentication → Users (tick Auto Confirm), then SQL Editor: `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`. Logins created after setup start as `customer`.
@@ -95,6 +96,49 @@ New staff logins: add the user in Supabase → Authentication → Users (tick Au
 3. Paste `supabase/tests/smoke_core.sql` and Run. The output should end with **ALL PHASE 1 CHECKS PASSED** (it rolls back, so nothing is left behind). Then the same with `supabase/tests/rls_check.sql` → **ALL RLS CHECKS PASSED**.
 4. Supabase → Authentication → Sign In / Providers → turn **off** "Allow new users to sign up" (staff and portal logins are created by us). Even if left on, new sign-ups are only `customer` with no data access.
 5. Every user that existed when `002_security.sql` ran became **staff** (the Phase 0 login). To make a later user staff: SQL Editor → `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`
+
+### Phases 5–7 Supabase steps (a human does these once, in this order)
+
+1. SQL Editor → paste and Run each NEW migration, in order: `008_production_mrp.sql`, `009_customer_logins.sql`, `010_purchasing_planning.sql`. Each: "Success. No rows returned."
+2. Paste `supabase/seed/002_customers_history.sql` and Run. The result row says either **HISTORY COMPLETE: …** or **HISTORY PARTLY GENERATED … Run this file again to continue.** Each run works ~45 seconds and keeps what it did; paste and Run it again until it says COMPLETE (in CI the whole 6 months takes ~10 s, so expect one or two runs). Never edit it between runs.
+3. Run `bash supabase/make_paste_files.sh` (or use the copy CI made) and run **Paste 2** → `ALL CHECKS PASSED`. It now includes `history_check.sql`, `production_mrp_check.sql` and `purchasing_check.sql`.
+4. Portal logins (needed in Phase 9, can be done now): Authentication → Users → Add user (tick Auto Confirm) with each customer's email — the 12 customers whose notes say "Has a customer-portal login" (Ethan Caldwell, Hannah Lindqvist, Emma Kawamoto, Grace Sorensen, Rebecca Holloway, Linda Castellanos, Marcus Bellweather, Jennifer Olsen, Summit Ridge Gifts = dana.moffat@, Wasatch Tinkerers Guild = jordan.ellis@, Provo Peak Party Supply = ben.hartley@, Demo Customer = demo.customer@example.com). Emails are `first.last@example.com`. The new login links itself to the customer record (009 trigger). Logins made before 009 ran: SQL Editor → `select link_customer_logins();`.
+5. Three staff logins total are required (rubric 12): add two more users and promote them with the `update profiles set role = 'staff' …` line above.
+
+### Phase 5 live-site checklist (deferred to Phase 11)
+
+1. Production orders → New → Dragon - Red, qty 6 → plates 6, components 62.58 g red filament; Create and issue → status In progress, journal Dr 1250 WIP / Cr 1200 Inventory; Dashboard "Work in process" rises by the same amount.
+2. Complete it with 5 good, 1 scrapped, reason Warping → 5 Dragons arrive at Fulfillment; cost roll-up card shows materials + machine (6 × 1.15 h × $0.2065) + labor (6 × 2 min × $20/h) ÷ 6; journal Dr Inventory (5 units) + Dr 5300 Scrap (1 unit) / Cr WIP / Cr 2300 accrued labor & machine.
+3. Try to complete with good + scrap ≠ started, or scrap without a reason → plain-English error.
+4. Production report → Last 30 days → first-pass yield, scrap rate, avg cycle time, on-time %, scrap by reason, orders table; change the date range and the numbers change.
+5. MRP → open orders from the history (Provo Peak 150 Keychains, Summit Ridge ornaments, Lakeview magnet sets…) show as gross demand; components show net requirements with order-by dates. "Create & send PO" for a supplier → the PO opens; back on MRP the item's scheduled receipt appears and the planned order disappears. "Plan it" on a product → production order created; its components stay as requirements.
+6. Second browser as another user sees the new MO / PO appear without refreshing.
+
+### Phase 6 live-site checklist (deferred to Phase 11)
+
+1. Sales orders → All → ~2,000 orders over six months; customer names from the spec's 60; Closed orders dominate, the last few days are Placed / Fulfilled.
+2. Dashboard inventory value, A/R (on-account businesses) and WIP are non-zero and come from the ledger.
+3. Item page for Keychain → months of movements: sales, production output, transfers to Campus on Tue/Fri.
+4. Suppliers → every supplier has PO history; VXB Bearings is late often (Watch/Replace), Hobby Lobby on time (Keep).
+
+### Phase 7 live-site checklist (deferred to Phase 11)
+
+1. Suppliers & scorecard → one screen with on-time %, fill rate, actual vs quoted lead, price stability, owed, next due date, overall score, Keep/Watch/Replace. Edit a supplier's quoted lead time → new POs use it.
+2. Reorder planning → each row shows d̄, σ, L, ROP and EOQ with the math under the number. Settings → change "Ordering cost per PO" from 15 to 30 → back on Reorder planning, every EOQ grows by √2 (41%). Change service level z → reorder points change. Put both back.
+3. "Create & send PO" for a supplier below its reorder point → PO opens (status Order sent, expected = today + quoted lead).
+4. On that PO: scan an item's barcode (USB or 📷) → its Receive-now count goes up by one per scan; receive part of it into Fulfillment → status Partly received, stock at Fulfillment up, bill due in Net-terms days (or paid at once for paid-at-purchase suppliers); journal Dr Inventory / Cr A/P. Receive the rest → Received → Close PO.
+5. Purchase orders → Bills to pay → Pay → owed drops, journal Dr A/P / Cr Cash; the supplier's scorecard "Owed" changes.
+6. Periodic review → items below their order-up-to level with suggested quantities → Send POs and record review → next review date moves 14 days out.
+
+### Production, MRP and history design (Phases 5–7) — read before Phase 8
+
+- **008_production_mrp.sql**: `v_production_orders` (cycle hours, on-time flag, `report_date` = finish/start/created date in Utah time), `production_metrics(from, to)` (first-pass yield = completed orders with no scrap ÷ completed; unit yield; scrap rate = scrapped ÷ started; avg cycle hours; on-time rate), `production_scrap_by_reason(from, to)`, `mrp_parent_plan(weeks)`, `mrp_component_plan(weeks)`. MRP weeks start Monday of this week; overdue demand lands in week 1. Parent netting: demand − finished stock (sellable locations) − open MOs; planned production in whole plates using a cumulative running max (late supply never cancels an earlier need). Component gross = planned plates × BOM + unissued components of *planned* MOs; netted against stock + open POs by expected week; planned orders rounded up to purchase units (spools). Order-by = need date − component lead time. Also adds an index on `inventory_txn(source_id)`.
+- **009_customer_logins.sql**: `handle_new_user` fills `profiles.customer_id` by matching email; `link_customer_logins()` links existing ones.
+- **seed/002_customers_history.sql**: adds the other 55 customers + "Demo Customer", then simulates each day from `history_start_date` (≈ today − 180) to yesterday by calling the business functions: PO receipts (per-supplier delay/split/short patterns from a hash of the PO id), overnight print completions at 8am, closes (cards after delivery, on-account ≈ Net 30), production planning (restock rules for Dragon/Spinner/Keychain/Ornament, made-to-order for the rest) and issue when components are on hand, Tue/Fri delivery runs to Campus, weekday purchasing from trailing 28-day usage, the demand model, returns (~3%), bill payments (K&J paid late), PO closes, fulfillment at 4:30pm, cycle counts on the 1st/15th, QA Hold inspections on Mondays. At the end it places 8 confirmed orders with need dates over the next 4 weeks so MRP has work. Progress is kept in settings rows `history_start_date`, `history_generated_through`, `history_complete`; decisions are derived from stored rows + hashes, so a later run continues exactly. CI sets `pp.history_budget_seconds` to run it in one go.
+- **010_purchasing_planning.sql**: settings `demand_history_days` (180) and `production_setup_cost` ($5); `v_reorder_plan` (d̄, σ incl. zero days, L, ROP = d̄L + zσ√L or the item's `reorder_point_manual`, EOQ = √(2DS/H), order-up-to = d̄(R+L) + zσ√(R+L), position = on hand + on order − committed, suggested qty and order-by date); `v_supplier_scorecard` (on-time = last receipt ≤ expected date; fill rate by value on finished POs; lead accuracy = 1 − avg|actual − quoted| ÷ quoted; price stability = 1 − 2·CV; owed/overdue/next due from `v_ap_open`; overall 40/30/20/10 → Keep ≥ 80, Watch ≥ 60, Replace); `inventory_reviews` + `record_inventory_review()` + `v_review_status`.
+- **Screens**: `features/production/` (list, new, detail with issue/complete/cancel + cost roll-up + journal, report), `features/mrp/MrpPage`, `features/purchasing/` (PO list + bills to pay, new PO, PO detail with scan-to-receive / partial receipts / close short / pay, suppliers scorecard, supplier add/edit + price list, reorder planning, periodic review), `features/settings/SettingsPage` (edit any setting), `app/JournalTables` (shared journal display).
+- `seed_check.sql` now compares rolled-up costs at **price-list** cost: live weighted averages move once purchase history exists (Hobby Lobby sale weeks at $8.99).
+- Not built yet: returns UI and P&L / turnover (Phase 8), manager reports and the customer portal (Phase 9).
 
 ### Phase 4 live-site checklist (deferred to Phase 11; do on a laptop AND a phone)
 
