@@ -88,6 +88,9 @@ jobs:
       - name: Box selection check (Phase 10)
         run: bash supabase/tests/run_sql.sh supabase/tests/box_selection_check.sql
 
+      - name: New design wizard check (Phase 10)
+        run: bash supabase/tests/run_sql.sh supabase/tests/new_design_check.sql
+
       # The SQL Editor sends a whole paste as ONE batch, so test the paste files that way
       # on a second, empty database.
       - name: Paste files work as single batches (like the Supabase SQL Editor)
