@@ -16,6 +16,7 @@ checks=(
   supabase/tests/production_mrp_check.sql
   supabase/tests/purchasing_check.sql
   supabase/tests/financials_check.sql
+  supabase/tests/reports_portal_check.sql
 )
 
 {

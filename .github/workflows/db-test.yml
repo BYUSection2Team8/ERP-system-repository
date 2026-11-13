@@ -76,6 +76,9 @@ jobs:
       - name: Financials check (P&L, turnover, valuation, return preview, Phase 8)
         run: bash supabase/tests/run_sql.sh supabase/tests/financials_check.sql
 
+      - name: Reports + customer portal check (Phase 9)
+        run: bash supabase/tests/run_sql.sh supabase/tests/reports_portal_check.sql
+
       # The SQL Editor sends a whole paste as ONE batch, so test the paste files that way
       # on a second, empty database.
       - name: Paste files work as single batches (like the Supabase SQL Editor)
