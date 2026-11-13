@@ -64,7 +64,12 @@ export function TrackPage() {
         </div>
         {state === 'loading' && <p className="muted">Looking up your order…</p>}
         {state === 'missing' && <p>We could not find that order. Please check the link in your email or receipt.</p>}
-        {state === 'error' && <div className="notice error">{err}</div>}
+        {state === 'error' && (
+          <div className="notice error">
+            Tracking is temporarily unavailable. Please try again in a few minutes.
+            <div className="small muted" style={{ marginTop: 4 }}>{err}</div>
+          </div>
+        )}
         {t && (
           <>
             <div>

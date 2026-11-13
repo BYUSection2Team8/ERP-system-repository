@@ -79,11 +79,11 @@ If time gets short: phases 0–9 plus one wow factor cover every requirement. Ev
 - [x] Phase 6 — Full customers + 6-month history (009 + seed/002 applied in Supabase; Paste 2 passed)
 - [x] Phase 7 — Purchasing + Suppliers (010 applied in Supabase; Paste 2 passed)
 - [x] Phase 8 — Returns + Financials (011 applied in Supabase; Paste 2 passed. Live-site checklist deferred to Phase 11)
-- [ ] Phase 9 — Reports + Portal + Realtime
-- [ ] Phase 10 — Wow factors (stretch)
-- [ ] Phase 11 — Polish + demo prep
+- [ ] Phase 9 — Reports + Portal + Realtime (code done, CI green. **Waiting on:** paste 012 in Supabase + Paste 2. Live-site checklist → Phase 11)
+- [ ] Phase 10 — Wow factors (#1 order tracking + QR + email, #2 print failure analytics + Report failure; code done, CI green. **Waiting on:** paste 013 + Paste 2, EmailJS secrets. Checklist → Phase 11)
+- [ ] Phase 11 — Polish + demo prep (runbook written: `DEMO.md`. **All of it needs people at the live site**: checklists, bug bash, labels, practice)
 
-**Next step:** Phase 9 — Reports + Portal + Realtime. Start a fresh AI session: "Read HANDOFF.md and do Phase 9."
+**Next step:** a human does `DEMO.md` section 0 (paste 012 + 013, Paste 2, portal + staff logins, EmailJS), then works through `DEMO.md` top to bottom, logging bugs in its bug log. Bring bugs to a fresh AI session: "Read HANDOFF.md and fix the bugs in DEMO.md's bug log."
 **Reading CI without signing in:** every SQL file, the type check and the build report their result as a GitHub *annotation* (job logs need a login, annotations don't): `curl -s https://api.github.com/repos/BYUSection2Team8/ERP-system-repository/check-runs/<job id>/annotations`. Job ids come from `.../actions/runs?head_sha=<commit>` → `jobs_url`. A failing SQL file shows the database error text there.
 **Live-site checklists are deferred to Phase 11** (team decision 2026-11-12): from Phase 4 on, each phase ends when CI is green and Paste 2 passes in Supabase. Write that phase's checklist into this file anyway, and run them all in Phase 11.
 Database changes from now on: add a new numbered migration, run `bash supabase/make_paste_files.sh`, and paste only the NEW migration into the SQL Editor (Paste 1 is for an empty database). Paste 2 (checks) can be re-run any time.
@@ -96,6 +96,40 @@ New staff logins: add the user in Supabase → Authentication → Users (tick Au
 3. Paste `supabase/tests/smoke_core.sql` and Run. The output should end with **ALL PHASE 1 CHECKS PASSED** (it rolls back, so nothing is left behind). Then the same with `supabase/tests/rls_check.sql` → **ALL RLS CHECKS PASSED**.
 4. Supabase → Authentication → Sign In / Providers → turn **off** "Allow new users to sign up" (staff and portal logins are created by us). Even if left on, new sign-ups are only `customer` with no data access.
 5. Every user that existed when `002_security.sql` ran became **staff** (the Phase 0 login). To make a later user staff: SQL Editor → `update profiles set role = 'staff' where id = (select id from auth.users where email = '...');`
+
+### Phases 9–10 Supabase step (a human does this once)
+
+1. SQL Editor → paste and Run `supabase/migrations/012_reports_portal.sql`, then `013_tracking_failures.sql` → each "Success. No rows returned."
+2. Run **Paste 2** → `ALL CHECKS PASSED` (adds `reports_portal_check.sql` and `tracking_failures_check.sql`).
+3. Portal logins + 2 more staff logins (see "Phases 5–7 Supabase steps" 4–5) and EmailJS secrets: `DEMO.md` section 0.
+
+### Phase 9 live-site checklist (deferred to Phase 11)
+
+1. Sidebar → Reports → Sales by day: chart + table for the last 30 days; switch to By week; totals' net sales equal the P&L's Net sales for the same dates. Hover a bar → tooltip.
+2. Top sellers: rank by revenue / units / gross profit; "Product (all colors)" groups the colors.
+3. Low stock: rows match Reorder planning's below-reorder-point items, with suggested qty and order-by date. Inventory by location: on hand per location, "available" when orders reserve stock. Supplier performance: quoted vs actual lead, on time, fill rate, rating.
+4. Dashboard: "Net sales, last 7 days" and "Items at reorder point" tiles; top bar shows a green **Live** badge.
+5. Sign in as the Demo Customer (portal): Shop shows products with availability at Campus and Fulfillment Center (QA Hold and Print Farm never appear; ornaments only Nov–Dec). Add 2 Dragons + 1 Temple → Cart: BYU/business discount applied by itself if the customer qualifies, Utah tax, no shipping; Temple says "Printed for you, ready about …" → Place pickup order → My orders shows it with Track and Cancel.
+6. Staff browser: the portal order appears on Sales orders (channel "Customer portal") without refreshing. Staff POS-sells Dragons at Campus → the customer's Shop availability drops by itself.
+7. Portal: Cancel the order → Cancelled for both users. Try quantity 0 / 1.5 / 600 → refused.
+8. About this system: the capability map links to every screen.
+
+### Phase 10 live-site checklist (deferred to Phase 11)
+
+1. Any sales order page → "Live order tracking" card: QR + link. Open the link in a private window (no login): stage, steps, lines, ready date. Scan the QR with a phone → same page.
+2. "Email tracking link" → with EmailJS set up: email arrives at the address (check spam) and the card lists "sent"; without it: "not sent" logged, link still works.
+3. POS sale → the done screen shows the receipt (with a "Scan to track" QR) and the tracking card.
+4. Portal order with a made-to-order item → tracking says "Waiting for stock" / "Queued for printing". Staff create + issue its production order → tracking says **Printing** with % and a countdown (refreshes every 20 s).
+5. On that in-progress production order: **Report print failure…** → reason Warping, all units → you land on the reprint (in progress if components were on hand); the failed order shows scrap; P&L "Production scrap" rises; tracking still says Printing. Complete the reprint, transfer/fulfill → tracking: Ready for pickup → Picked up.
+6. Reports → Print failures: scrap rate, wasted filament, cost of poor quality; by week (mid-Sept–Oct spike), reason, product (Airplane highest), color.
+
+### Reports, portal, tracking design (Phases 9–10)
+
+- **012_reports_portal.sql**: `sales_by_period(from, to, 'day'|'week')` (ledger 4000/4100/4400/5000 by Utah date + orders/units fulfilled; weeks start Monday; zero rows for quiet days), `top_sellers(from, to, limit)`, `live_signals` table + statement triggers on `inventory_txn` / `sales_orders` (customers can't read stock, so the portal and the Live badge subscribe to this one row), `_insert_sales_order` (shared insert; `create_sales_order` = staff check + it), portal functions `portal_catalog()`, `portal_quote_order(p)`, `portal_place_order(p)`, `portal_cancel_order(id)`, `portal_order_backorders()`. The portal decides customer, channel `portal`, pickup only, discount eligibility (BYU / business ≥ min units) and payment (on account if terms, else pay at pickup) itself; the browser only sends location, lines, need date, notes. Pickup locations = sellable `retail`/`storage` (Campus, Fulfillment Center).
+- **013_tracking_failures.sql**: `sales_orders.tracking_token` default = 32 random hex (backfilled). `track_order(token)` is the only function `anon` can run; returns first name, stage, steps, lines, % printed (from the running production order: start + ⌈plates ÷ printer_count⌉ × print minutes + assembly), ready/delivery dates (setting `transit_days_estimate`). `email_log` + `log_tracking_email()` (staff or the order's own customer). `report_print_failure(mo, reason, qty)` = complete with scrap → create reprint (same SO, due date) → try to issue it. `print_failure_analytics(from, to)` by total/product/color/reason/week.
+- **Screens**: `features/reports/` (`ReportsPage` tabs incl. Print failures, `reportsShared` date range + SVG bar chart), `features/portal/` (`CustomerHome` = Shop / Cart / My orders, `portalData`), `features/tracking/` (`TrackPage` public at `/#/track/<token>`, `TrackingCard`, `QrCode` via the `qrcode` package, `tracking.ts` EmailJS REST call + log), `app/LiveIndicator`. Production detail has "Report print failure…".
+- EmailJS keys are public by design (browser-side); they only allow sending that template. Template params: `to_email`, `to_name`, `order_no`, `tracking_url`, `company`.
+- Not built (stretch, in SPEC priority order): show-the-math panels everywhere (#3, the About page capability map is a start), quote calculator (#4), spool tracking + printer board (#5), box selection + shipping zones (#6), capacity model (#7), new-design wizard / demand simulator (#8), Reset demo data button.
 
 ### Phase 8 Supabase step (a human does this once)
 
@@ -278,3 +312,4 @@ The builder's computer does **not** have Node.js. GitHub Actions installs, type-
 - **2026-11-12** — 008, 009, 010 and seed/002 applied in Supabase; Paste 2 → ALL CHECKS PASSED. Phases 5–7 complete. (The seed now skips linking portal logins if 009 is missing, instead of failing.) Still to do by hand: the 12 portal logins and 2 more staff logins (step 4–5 of "Phases 5–7 Supabase steps").
 - **2026-11-12** — Phase 8 code, CI green: `011_financials_returns.sql` (P&L, turnover, valuation by location, return preview) + `financials_check.sql` (hand-calculated January-2099 P&L and turnover; preview saves nothing); returns & exchanges screens, Profit & loss, Inventory valuation & turnover. **Not yet done in Supabase:** paste 011, then Paste 2.
 - **2026-11-12** — 011 applied in Supabase; Paste 2 → ALL CHECKS PASSED. Phase 8 complete. Saved SQL Editor queries may be deleted freely: they are only copies of files in `supabase/` (regenerate the pastes with `bash supabase/make_paste_files.sh`).
+- **2026-11-12** — Phases 9–10 code, CI green (build + every database check, both paste files as single batches). Phase 9: `012_reports_portal.sql` + `reports_portal_check.sql` (hand-calculated Feb-2099 sales by day/week and top sellers; portal catalog/quote/place/cancel as a test customer incl. 12 bad inputs, spoofed customer id and discount ignored, anon refused); Reports screen (5 tabs), customer portal (shop with live availability by pickup location, cart priced by the database, my orders with backorder dates and cancel), Live badge, dashboard tiles, capability map on About. Phase 10: `013_tracking_failures.sql` + `tracking_failures_check.sql` (stages waiting → queued → printing → ready → picked up / packing → shipped; anon can track but not read the email log; Report failure scraps and starts the reprint; analytics numbers); public tracking page with countdown, QR on receipts and order pages, EmailJS email with sent/failed/not-sent log, Print failures report. Phase 11: `DEMO.md` runbook (setup, deferred checklists, bug bash, props, demo flow, bug log). Checks now pass ids between role switches with `set_config('pp.…')` instead of temp tables. **Not yet done in Supabase:** paste 012 + 013, Paste 2. Deployed site checked: login page loads with no console errors; `/#/track/…` opens without a login.
