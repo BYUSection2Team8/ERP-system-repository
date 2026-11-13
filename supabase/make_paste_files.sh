@@ -18,6 +18,7 @@ checks=(
   supabase/tests/financials_check.sql
   supabase/tests/reports_portal_check.sql
   supabase/tests/tracking_failures_check.sql
+  supabase/tests/quotes_printers_capacity_check.sql
 )
 
 {
