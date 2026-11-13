@@ -326,3 +326,39 @@ label.inline { flex-direction: row; align-items: center; gap: 0.4rem; font-weigh
 .totals.pl td.indent { padding-left: 1.2rem; }
 .totals.pl tr.subtotal td { border-top: 1px solid var(--border); font-weight: 600; }
 .totals.pl tr.grand td { font-size: 1.1rem; }
+
+/* Phase 9: reports charts, live indicator, customer portal */
+.chart { padding: 0.5rem 0.75rem; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart-grid { stroke: #e6eaf0; stroke-width: 1; }
+.chart-base { stroke: #9aa6b8; stroke-width: 1; }
+.chart-axis { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart-fill { fill: var(--teal-dark); }
+.chart-fill.negative { fill: #9aa6b8; }
+.chart-bar:hover .chart-fill { fill: var(--navy-2); }
+.live { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--muted); }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: #b3bccb; }
+.live.on .live-dot { background: #17a673; box-shadow: 0 0 0 3px rgba(23, 166, 115, 0.18); }
+.live.off .live-dot { background: #e0a100; }
+.portal-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 0.75rem 1.5rem; background: var(--navy); color: #fff; }
+.portal-top .brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1.05rem; }
+.portal-top nav { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.portal-top nav a { color: #dbe4f3; text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; }
+.portal-top nav a.active { background: var(--teal); color: var(--navy); font-weight: 600; }
+.portal-top .who { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
+.portal-top .live { color: #dbe4f3; }
+.portal-main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem; }
+.product-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.product-card h3 { margin: 0; font-size: 1rem; }
+.product-card .price { font-weight: 700; font-size: 1.1rem; }
+.swatches { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.swatch { border: 1px solid var(--border); background: var(--surface); border-radius: 99px; padding: 0.2rem 0.6rem; font: inherit; font-size: 0.82rem; cursor: pointer; }
+.swatch.active { border-color: var(--navy); background: var(--navy); color: #fff; }
+.stock-lines { list-style: none; margin: 0; padding: 0; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.stock-lines li { display: flex; justify-content: space-between; gap: 0.5rem; }
+.cart-bar { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; box-shadow: 0 -6px 18px rgba(20, 40, 75, 0.08); }
+@media (max-width: 760px) {
+  .portal-top, .portal-main, .cart-bar { padding-left: 16px; padding-right: 16px; }
+}
+.card.highlight { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(46, 196, 182, 0.25); }

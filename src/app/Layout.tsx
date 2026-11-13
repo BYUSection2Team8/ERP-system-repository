@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { routes, type AppRoute } from './routes';
 import { Logo } from './Logo';
 import { useAuth } from '../features/auth/AuthProvider';
+import { LiveIndicator } from './LiveIndicator';
 
 const sectionOrder: AppRoute['section'][] = [
   'Overview',
@@ -44,6 +45,7 @@ export function Layout() {
           {role === 'unknown' && (
             <span className="badge warn">No profile found: apply the database migrations</span>
           )}
+          <LiveIndicator />
           <span className="muted">{fullName ?? session?.user.email}</span>
           <button className="btn" onClick={signOut}>
             Sign out

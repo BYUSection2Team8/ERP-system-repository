@@ -30,6 +30,7 @@ import { NewReturnPage } from '../features/returns/NewReturnPage';
 import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
 import { ProfitLossPage } from '../features/finance/ProfitLossPage';
 import { InventoryValuationPage } from '../features/finance/InventoryValuationPage';
+import { ReportsPage } from '../features/reports/ReportsPage';
 
 // Route registry: the single place that lists every screen.
 // The sidebar is generated from this list, so adding a module = one folder in
@@ -44,6 +45,7 @@ export interface AppRoute {
 
 export const routes: AppRoute[] = [
   { path: '/', label: 'Dashboard', section: 'Overview', component: DashboardPage },
+  { path: '/reports', label: 'Reports', section: 'Overview', component: ReportsPage },
   { path: '/pos', label: 'Point of sale', section: 'Sales', component: PosPage },
   { path: '/sales', label: 'Sales orders', section: 'Sales', component: SalesOrdersPage },
   { path: '/sales/new', label: 'New sales order', section: 'Sales', component: NewSalesOrderPage },
