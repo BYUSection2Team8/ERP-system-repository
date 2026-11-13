@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ErrorNotice, Loading, PageHeader, Stat, shortLocation } from '../../app/ui';
 import { db, unwrap } from '../../lib/db';
-import { dateTime, grams, money, qty, sourceLabels, unitCost } from '../../lib/format';
+import { dateTime, gramsInPacks, money, qty, sourceLabels, unitCost } from '../../lib/format';
 import type { InventoryTxn } from '../../lib/types';
 import { useLiveQuery } from '../../lib/useLiveQuery';
 import { Barcode } from '../barcodes/Barcode';
@@ -69,7 +69,7 @@ export function ItemDetailPage() {
   if (detail.error) return <ErrorNotice message={detail.error} />;
   if (!inv.data || !detail.data) return null;
 
-  const { items, locations, valuation, spoolGrams, at } = inv.data;
+  const { items, locations, valuation, packOf, at } = inv.data;
   const item = items.find((i) => i.id === id);
   if (!item) return <ErrorNotice message="Item not found." />;
   const { txns, std, bom, suppliers } = detail.data;
@@ -112,7 +112,7 @@ export function ItemDetailPage() {
         </div>
 
         <div className="stats stack">
-          <Stat label="On hand, all locations" value={item.uom === 'g' ? grams(total, spoolGrams) : qty(total)} />
+          <Stat label="On hand, all locations" value={item.uom === 'g' ? gramsInPacks(total, packOf(item.id)) : qty(total)} />
           <Stat label="Weighted-average cost" value={`${unitCost(v?.avg_unit_cost)}${item.uom === 'g' ? ' per g' : ''}`} />
           <Stat label="Inventory value" value={money(v?.inventory_value)} hint="on hand × weighted-average cost" />
         </div>

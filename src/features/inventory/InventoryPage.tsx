@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ErrorNotice, Loading, PageHeader, Stat, shortLocation } from '../../app/ui';
-import { grams, money, qty, unitCost } from '../../lib/format';
+import { gramsInPacks, money, qty, unitCost } from '../../lib/format';
 import { ScanItemInput } from '../barcodes/ScanItemInput';
 import { categoryLabels, useInventoryData } from './useInventoryData';
 
@@ -16,7 +16,7 @@ export function InventoryPage() {
   if (error) return <ErrorNotice message={error} />;
   if (!data) return null;
 
-  const { items, locations, valuation, spoolGrams, at } = data;
+  const { items, locations, valuation, packOf, at } = data;
   const t = search.trim().toLowerCase();
   const rows = items.filter((i) => {
     if (category !== 'all' && i.category !== category) return false;
@@ -123,7 +123,7 @@ export function InventoryPage() {
                       </td>
                     );
                   })}
-                  <td className="num strong">{i.uom === 'g' ? grams(total, spoolGrams) : qty(total)}</td>
+                  <td className="num strong">{i.uom === 'g' ? gramsInPacks(total, packOf(i.id)) : qty(total)}</td>
                   <td className="num">{unitCost(v?.avg_unit_cost)}{i.uom === 'g' ? '/g' : ''}</td>
                   <td className="num">{money(v?.inventory_value)}</td>
                 </tr>

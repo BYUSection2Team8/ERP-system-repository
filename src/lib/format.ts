@@ -56,3 +56,14 @@ export const sourceLabels: Record<string, string> = {
   production_issue: 'Issued to production',
   production_output: 'Production output',
 };
+
+/**
+ * Grams with the item's own purchase pack, e.g. "7,880 g (8.0 spools)" for
+ * filament or "250 g (12.5 tubes)" for glue. No pack (or a 1 g pack): grams only.
+ */
+export function gramsInPacks(v: number | string, pack?: { uom: string; size: number }): string {
+  const n = Number(v);
+  if (!pack || !(pack.size > 1)) return `${num.format(n)} g`;
+  const count = n / pack.size;
+  return `${num.format(n)} g (${count.toFixed(1)} ${pack.uom}${Math.abs(count - 1) < 0.05 ? '' : 's'})`;
+}

@@ -61,7 +61,7 @@ begin
     ('PKG-BOX-M',   'PP-PKG-BOX-M',   'Shipping box - medium 9x7x5', 'purchased', 'packaging', 'ea', 'not_sold', s_ul, 9, 7, 5),
     ('PKG-BOX-L',   'PP-PKG-BOX-L',   'Shipping box - large 12x10x6','purchased', 'packaging', 'ea', 'not_sold', s_ul, 12, 10, 6),
     ('PKG-TISSUE',  'PP-PKG-TISSUE',  'Tissue paper (sheet)',        'purchased', 'packaging', 'ea', 'not_sold', s_ul, null, null, null),
-    ('CMP-GLUE',    'PP-CMP-GLUE',    'Super glue (gram)',           'purchased', 'component', 'g',  'not_sold', s_am, null, null, null),
+    ('CMP-GLUE',    'PP-CMP-GLUE',    'Super glue (grams, 20 g tubes)',           'purchased', 'component', 'g',  'not_sold', s_am, null, null, null),
     ('CMP-LED',     'PP-CMP-LED',     'LED tealight',                'purchased', 'component', 'ea', 'not_sold', s_am, null, null, null),
     ('CMP-RING',    'PP-CMP-RING',    'Split ring',                  'purchased', 'component', 'ea', 'not_sold', s_am, null, null, null),
     ('CMP-CHAIN',   'PP-CMP-CHAIN',   'Keychain chain',              'purchased', 'component', 'ea', 'not_sold', s_am, null, null, null),
@@ -85,8 +85,9 @@ begin
       ('CMP-BEARING', s_vx, 0.60), ('PKG-CARD', s_vp, 0.15)
     ) as x(sku, sup, cost)
     join items i on i.sku = x.sku;
-  -- Glue is priced per gram.
-  update item_suppliers set purchase_uom = 'g' where item_id = (select id from items where sku = 'CMP-GLUE');
+  -- Glue is stocked in grams and bought in 20 g tubes ($0.30/g = $6.00 a tube).
+  update item_suppliers set purchase_uom = 'tube', stock_per_purchase_unit = 20, unit_cost = 6.00
+   where item_id = (select id from items where sku = 'CMP-GLUE');
 
   -- ---------------------------------------------------------- finished items
   -- One row per product: per-plate print/assembly data, price, size, policy.
