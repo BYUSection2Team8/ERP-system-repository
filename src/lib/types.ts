@@ -103,7 +103,7 @@ export interface Customer {
 }
 
 export type SoStatus = 'placed' | 'fulfilled' | 'closed' | 'cancelled';
-export type DiscountType = 'none' | 'byu' | 'business' | 'manual';
+export type DiscountType = 'none' | 'byu' | 'business' | 'manual' | 'promo';
 export type FulfillmentMethod = 'ship' | 'pickup' | 'counter';
 export type PaymentMethod = 'cash' | 'card' | 'account' | 'exchange';
 
@@ -155,6 +155,7 @@ export interface SalesOrderLine {
 
 /** What quote_sales_order returns: the order priced but not saved. */
 export interface Quote {
+  promo_code?: string | null;
   shipping?: { zone: number; weight_oz: number; postage: number; handling: number; total: number } | null;
   customer_id: string | null;
   customer_name: string | null;

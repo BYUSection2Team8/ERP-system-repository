@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import { routes, type AppRoute } from './routes';
 import { Logo } from './Logo';
 import { useAuth } from '../features/auth/AuthProvider';
@@ -19,10 +19,10 @@ export function Layout() {
   return (
     <div className="shell">
       <aside className="sidebar no-print">
-        <div className="sidebar-brand">
+        <Link to="/" className="sidebar-brand" title="Dashboard">
           <Logo size={32} />
           <span>Poulson Prints</span>
-        </div>
+        </Link>
         <nav>
           {sectionOrder.map((section) => {
             const items = routes.filter((r) => r.section === section && !r.hidden);

@@ -319,8 +319,8 @@ begin
   -- Promo code: one discount per order, the best one applies.
   if coalesce(trim(p->>'promo_code'), '') <> '' then
     v_ppct := public._promo_pct(p->>'promo_code');
-    if v_ppct > case v_dtype when 'byu' then public.setting_num('byu_discount_pct')
-                             when 'business' then public.setting_num('business_discount_pct') else 0 end then
+    if v_ppct > (case v_dtype when 'byu' then public.setting_num('byu_discount_pct')
+                              when 'business' then public.setting_num('business_discount_pct') else 0 end) then
       v_dtype := 'promo';
       v_promo := upper(trim(p->>'promo_code'));
     end if;

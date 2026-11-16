@@ -363,6 +363,7 @@ export interface Totals {
 }
 
 export const discountNames: Record<DiscountType, string> = {
+  promo: 'Promo code',
   none: 'Discount',
   byu: 'BYU student discount',
   business: 'Business bulk discount',

@@ -423,3 +423,9 @@ label.inline { flex-direction: row; align-items: center; gap: 0.4rem; font-weigh
 .ams-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.25rem; }
 .ams-chip { background: #eef4fb; border-radius: 6px; padding: 0.15rem 0.4rem; text-align: center; }
 .ams-chip.low { background: var(--error-bg); color: var(--error-text); }
+
+/* Logo links home */
+a.sidebar-brand, .portal-top a.brand { color: inherit; text-decoration: none; }
+a.sidebar-brand:hover span, .portal-top a.brand:hover span { text-decoration: underline; }
+.promo-row { display: flex; gap: 0.4rem; align-items: flex-end; flex-wrap: wrap; }
+.promo-row input { width: 10rem; text-transform: uppercase; }

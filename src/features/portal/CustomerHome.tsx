@@ -7,7 +7,7 @@ import { errorMessage, rpc } from '../../lib/db';
 import { date, dateTime, money } from '../../lib/format';
 import { useAuth } from '../auth/AuthProvider';
 import type { DiscountType } from '../../lib/types';
-import { StatusBadge, TotalsTable, paymentLabels } from '../sales/salesShared';
+import { StatusBadge, TotalsTable, discountNames, paymentLabels } from '../sales/salesShared';
 import { TrackingCard } from '../tracking/TrackingCard';
 import { trackingUrl } from '../tracking/tracking';
 import { QuoteFields, QuoteResult, emptyQuoteForm, quotePayload, useCustomQuote, type QuoteForm } from '../quotes/quoteShared';
@@ -47,10 +47,10 @@ export function CustomerHome() {
   return (
     <div className="portal">
       <header className="portal-top">
-        <div className="brand">
+        <Link to="/" className="brand" title="Shop">
           <Logo size={30} />
           <span>Poulson Prints</span>
-        </div>
+        </Link>
         <nav>
           <NavLink to="/" end>Shop</NavLink>
           <NavLink to="/cart">Cart{units > 0 ? ` (${units})` : ''}</NavLink>
@@ -236,6 +236,8 @@ function Cart({
 }) {
   const navigate = useNavigate();
   const [needDate, setNeedDate] = useState('');
+  const [promoInput, setPromoInput] = useState('');
+  const [promoCode, setPromoCode] = useState('');
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [placeError, setPlaceError] = useState<string | null>(null);
@@ -243,7 +245,7 @@ function Cart({
   const valid = lines.filter((l) => variants.has(l.item_id));
   const payload =
     canOrder && loc && valid.length > 0
-      ? { location_id: loc.id, lines: valid.map((l) => ({ item_id: l.item_id, qty: l.qty })), need_date: needDate || null, notes: notes || null }
+      ? { location_id: loc.id, lines: valid.map((l) => ({ item_id: l.item_id, qty: l.qty })), need_date: needDate || null, notes: notes || null, promo_code: promoCode || null }
       : null;
   const { quote, error, pricing } = usePortalQuote(payload);
 
@@ -348,6 +350,35 @@ function Cart({
               <input value={notes} maxLength={500} onChange={(e) => setNotes(e.target.value)} placeholder="Gift wrap, pickup time…" />
             </label>
           </div>
+          <div className="promo-row">
+            <label>
+              Promo code
+              <input
+                value={promoInput}
+                maxLength={30}
+                onChange={(e) => setPromoInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setPromoCode(promoInput.trim());
+                  }
+                }}
+                placeholder="Have a code?"
+                aria-label="Promo code"
+              />
+            </label>
+            <button type="button" className="btn" disabled={!promoInput.trim()} onClick={() => setPromoCode(promoInput.trim())}>Apply</button>
+            {promoCode && (
+              <button type="button" className="btn link" onClick={() => { setPromoCode(''); setPromoInput(''); }}>Remove code</button>
+            )}
+          </div>
+          {promoCode && quote?.discount_type === 'promo' && (
+            <div className="small good">Code {quote.promo_code} applied: {(Number(quote.discount_pct) * 100).toFixed(0)}% off.</div>
+          )}
+          {promoCode && quote && quote.discount_type !== 'promo' && (
+            <div className="small muted">Your {discountNames[quote.discount_type].toLowerCase()} is a better deal than this code, so it stays.</div>
+          )}
+          {promoCode && error && /promo code/i.test(error) && <div className="small bad">{error} Remove it to place the order.</div>}
         </div>
         <div className="card pos-pay action-card">
           <h2 style={{ marginTop: 0 }}>Pickup order</h2>
