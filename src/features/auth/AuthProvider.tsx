@@ -71,8 +71,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error ? error.message : null;
   }
 
+  // Always signs out on this device: if the server call fails (expired or
+  // revoked session, no network) the session is still cleared locally, and the
+  // screen goes back to the sign-in page either way.
   async function signOut() {
-    if (supabase) await supabase.auth.signOut();
+    if (supabase) {
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) await supabase.auth.signOut({ scope: 'local' });
+      } catch {
+        try {
+          await supabase.auth.signOut({ scope: 'local' });
+        } catch {
+          /* nothing more to clear */
+        }
+      }
+    }
+    setSession(null);
+    setRole(null);
+    setFullName(null);
+    window.location.hash = '#/';
   }
 
   return (
