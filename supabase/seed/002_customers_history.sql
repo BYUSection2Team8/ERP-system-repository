@@ -954,10 +954,10 @@ begin
         ('Provo Peak Party Supply', 18, '{"KEY-BW": 150, "SPN-BLUE": 20, "SPN-BLACK": 10}'::jsonb),
         ('Wasatch Tinkerers Guild',  9, '{"ARM-BLACK": 8, "ARM-BLUE": 4}'::jsonb),
         ('Lakeview Toy Chest',      21, '{"MAG-RED": 10, "MAG-BLUE": 10, "DRG-BLUE": 10}'::jsonb),
-        ('Rebecca Holloway',         6, '{"TMP-WHITE": 2, "TMP-BLUE": 1}'::jsonb),
+        ('Rebecca Holloway',         6, '{"TMP-WHITE": 3}'::jsonb),
         ('Megan Halvorsen',         10, '{"TMP-WHITE": 3, "AIR-MC": 1}'::jsonb),
         ('Brandon Kowalski',        13, '{"AIR-MC": 2}'::jsonb),
-        ('Linda Castellanos',       16, '{"MAG-WHITE": 2, "TMP-RED": 1}'::jsonb)
+        ('Linda Castellanos',       16, '{"MAG-WHITE": 2, "TMP-WHITE": 1}'::jsonb)
       ) as x(cust, days, lines) loop
       select jsonb_agg(jsonb_build_object('item_id', i.id, 'qty', e.value::int)) into v_biz
         from jsonb_each_text(r.lines) e join items i on i.sku = e.key;
@@ -979,6 +979,9 @@ begin
     values ('history_complete', 'true', 'boolean', 'history', 'History complete',
             'seed/002 finished generating the 6-month history.')
     on conflict (key) do update set value = 'true', updated_at = now();
+    -- Temples are printed in white only (023): retire the other colors once the history is in.
+    update items set is_active = false
+     where product_family = 'Temple LED Tealight' and color is distinct from 'White' and is_active;
     -- Link existing portal logins (009_customer_logins.sql); skipped if 009 is not applied yet.
     if to_regprocedure('public.link_customer_logins()') is not null then
       perform public.link_customer_logins();

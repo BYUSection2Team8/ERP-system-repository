@@ -26,6 +26,7 @@ checks=(
   supabase/tests/capacity_overrides_check.sql
   supabase/tests/shipping_zones_check.sql
   supabase/tests/accounts_check.sql
+  supabase/tests/promo_check.sql
 )
 
 {

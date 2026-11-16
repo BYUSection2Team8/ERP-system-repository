@@ -9,8 +9,8 @@ do $$
 declare r record;
 begin
   assert (select count(*) from items) >= 48, 'at least 48 items (30 finished + 18 purchased)';
-  assert (select count(*) from items where item_type = 'finished') = 30, '30 finished items';
-  assert (select count(*) from items where item_type = 'purchased') = 18, '18 purchased items';
+  assert (select count(*) from items where item_type = 'finished') >= 30, 'at least 30 finished items (new designs and custom prints add more)';
+  assert (select count(*) from items where item_type = 'purchased') >= 18, 'at least 18 purchased items';
   assert (select count(distinct parent_item_id) from boms) = 30, 'every finished item has a BOM';
   assert (select count(distinct product_family) from items where item_type = 'finished') = 9, '9 products';
   assert (select count(*) from suppliers) >= 7, '7 suppliers';
