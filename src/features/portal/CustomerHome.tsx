@@ -66,12 +66,7 @@ export function CustomerHome() {
       <main className="portal-main">
         {catalog.loading && <Loading what="products" />}
         {catalog.error && <ErrorNotice message={catalog.error} />}
-        {catalog.data && !customer && (
-          <div className="notice warn spaced">
-            Your login is not linked to a customer account yet, so you can browse but not order. Please contact Poulson Prints
-            (staff: the login's email must match the customer's email).
-          </div>
-        )}
+        {catalog.data && !customer && <FinishAccount email={session?.user.email ?? ''} onDone={() => void catalog.reload()} />}
         {catalog.data && (
           <Routes>
             <Route path="/" element={<Shop families={catalog.data.families} locations={locations} loc={loc} setLocationId={setLocationId} add={add} cartQty={(id) => lines.find((l) => l.item_id === id)?.qty ?? 0} />} />
@@ -529,5 +524,78 @@ function PortalQuote({ locations, loc, setLocationId, canOrder }: { locations: P
         </div>
       </div>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+/**
+ * A login without a customer record (new sign-up, or an email that matched no
+ * customer): create / link it so the person can order. Runs by itself right
+ * after "Create account"; otherwise shows a short form.
+ */
+function FinishAccount({ email, onDone }: { email: string; onDone: () => void }) {
+  const pending = (() => {
+    try {
+      const v = JSON.parse(localStorage.getItem('pp-pending-registration') ?? 'null');
+      return v && v.email === email.toLowerCase() ? (v as { name: string; state: string }) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const [name, setName] = useState(pending?.name ?? '');
+  const [state, setState] = useState(pending?.state ?? 'UT');
+  const [phone, setPhone] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function save(n: string, s: string, ph: string) {
+    setBusy(true);
+    setErr(null);
+    try {
+      await rpc('register_customer', { p_name: n.trim(), p_state: s.trim().toUpperCase(), p_phone: ph.trim() || null });
+      try {
+        localStorage.removeItem('pp-pending-registration');
+      } catch {
+        /* ignore */
+      }
+      onDone();
+    } catch (e) {
+      setErr(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    if (pending?.name) void save(pending.name, pending.state, '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <form className="card form spaced" onSubmit={(e) => { e.preventDefault(); void save(name, state, phone); }}>
+      <h2 style={{ margin: 0 }}>Finish setting up your account</h2>
+      <p className="muted small" style={{ margin: 0 }}>
+        We need your name and state to place orders (Utah orders include sales tax). If Poulson Prints already has you as a customer with
+        this email, your account is linked to it.
+      </p>
+      <div className="form-row">
+        <label className="grow">
+          Name
+          <input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />
+        </label>
+        <label>
+          State
+          <input className="state-input" maxLength={2} value={state} onChange={(e) => setState(e.target.value.toUpperCase())} />
+        </label>
+        <label>
+          Phone (optional)
+          <input value={phone} maxLength={30} onChange={(e) => setPhone(e.target.value)} />
+        </label>
+      </div>
+      {err && <div className="notice error">{err}</div>}
+      <div>
+        <button className="btn primary" disabled={busy}>{busy ? 'Saving…' : 'Save and start shopping'}</button>
+      </div>
+    </form>
   );
 }

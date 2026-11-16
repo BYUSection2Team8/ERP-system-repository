@@ -23,3 +23,14 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(url!, anonKey!)
   : null;
+
+/**
+ * A throw-away client for creating someone else's login (staff "Users & access"):
+ * it does not store the new session, so the staff member stays signed in as themselves.
+ */
+export function createSignupClient(): SupabaseClient | null {
+  if (!isSupabaseConfigured) return null;
+  return createClient(url!, anonKey!, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'pp-signup-client' },
+  });
+}

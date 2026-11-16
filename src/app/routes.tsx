@@ -25,6 +25,7 @@ import { SupplierDetailPage } from '../features/purchasing/SupplierDetailPage';
 import { ReorderPlanningPage } from '../features/purchasing/ReorderPlanningPage';
 import { PeriodicReviewPage } from '../features/purchasing/PeriodicReviewPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
+import { UsersPage } from '../features/settings/UsersPage';
 import { ReturnsPage } from '../features/returns/ReturnsPage';
 import { NewReturnPage } from '../features/returns/NewReturnPage';
 import { ReturnDetailPage } from '../features/returns/ReturnDetailPage';
@@ -84,5 +85,6 @@ export const routes: AppRoute[] = [
   { path: '/finance/pl', label: 'Profit & loss', section: 'Finance', component: ProfitLossPage },
   { path: '/finance/inventory', label: 'Inventory valuation & turnover', section: 'Finance', component: InventoryValuationPage },
   { path: '/settings', label: 'Settings', section: 'System', component: SettingsPage },
+  { path: '/settings/users', label: 'Users & access', section: 'System', component: UsersPage },
   { path: '/about', label: 'About this system', section: 'System', component: AboutPage },
 ];
