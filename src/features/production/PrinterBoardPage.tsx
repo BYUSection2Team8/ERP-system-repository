@@ -54,7 +54,7 @@ async function load() {
   const today = localToday();
   const [printers, jobs, stats, spools] = await Promise.all([
     c.from('printers').select('*').order('sort_order').then(unwrap<Printer[]>),
-    c.from('production_orders').select('id, mo_no, status, printer_id, plates, qty_started, qty_planned, started_at, due_date, so_id, item:items(name, print_minutes)')
+    c.from('production_orders').select('id, mo_no, status, printer_id, plates, qty_started, qty_planned, started_at, due_date, so_id, item:items!production_orders_item_id_fkey(name, print_minutes)')
       .in('status', ['planned', 'in_progress']).order('created_at').then((r) => unwrap(r) as unknown as Job[]),
     c.rpc('printer_stats', { p_from: addDays(today, -29), p_to: today }).then(unwrap<Stats[]>),
     c.from('spools').select('printer_id, ams_slot, spool_no, grams_left, item:items(color, name)').eq('status', 'loaded').then((r) => unwrap(r) as unknown as LoadedSpool[]),
