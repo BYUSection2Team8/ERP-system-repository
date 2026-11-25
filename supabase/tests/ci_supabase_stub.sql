@@ -23,11 +23,10 @@ $$;
 grant usage on schema auth to anon, authenticated, service_role;
 grant execute on function auth.uid() to anon, authenticated, service_role;
 
--- Supabase's default: API roles can use and read the public schema.
+-- Like a NEW Supabase project: the API roles may use schema public, but get no
+-- default privileges on objects created later (older projects did; database 1 is
+-- one of those). 025_grants_for_new_projects.sql grants what the app needs.
 grant usage on schema public to anon, authenticated, service_role;
-alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
-alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
-alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
 
 create publication supabase_realtime;
 
