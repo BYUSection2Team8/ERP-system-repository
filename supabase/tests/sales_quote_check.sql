@@ -22,8 +22,14 @@ declare
   v_id   uuid;
   v_n    bigint;
   ln     sales_order_lines%rowtype;
+  r      record;
 begin
   assert key_bw is not null and c_byu is not null and c_biz is not null, 'starter data present';
+  -- The history is random: make sure the shelves hold what this test sells (rolled back at the end).
+  for r in select l.id as loc, 40 - coalesce((select sum(t.qty) from inventory_txn t where t.item_id = key_bw and t.location_id = l.id), 0) as short
+             from locations l where l.code in ('CAMPUS', 'FULFILLMENT') loop
+    if r.short > 0 then perform adjust_inventory(key_bw, r.loc, r.short, 'ADJ_FOUND', 'Test stock', now() - interval '1 minute'); end if;
+  end loop;
 
   -- POS: quote then sell; quote saves nothing.
   p := jsonb_build_object('channel', 'pos', 'fulfillment_method', 'counter', 'location_code', 'CAMPUS',

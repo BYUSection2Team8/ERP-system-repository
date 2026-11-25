@@ -3,6 +3,7 @@ import { ErrorNotice, Loading, PageHeader } from '../../app/ui';
 import { db, errorMessage, unwrap } from '../../lib/db';
 import { dateTime } from '../../lib/format';
 import { useLiveQuery } from '../../lib/useLiveQuery';
+import { ReseedPanel } from './ReseedPanel';
 
 interface SettingRow {
   key: string;
@@ -24,8 +25,9 @@ const categoryNames: Record<string, string> = {
   ordering: 'Ordering and holding cost (ROP / EOQ)',
   inventory: 'Inventory',
   history: 'Generated history (read only)',
+  system: 'System',
 };
-const order = ['ordering', 'sales', 'fulfillment', 'labor', 'machine', 'filament', 'inventory', 'company', 'history'];
+const order = ['ordering', 'sales', 'fulfillment', 'labor', 'machine', 'filament', 'inventory', 'company', 'system', 'history'];
 
 async function load() {
   return db().from('settings').select('*').order('key').then(unwrap<SettingRow[]>);
@@ -69,6 +71,7 @@ export function SettingsPage() {
         subtitle="Every rate and rule the system uses is a stored setting. Change one and the reorder points, EOQ, costs, prices and reports that depend on it update everywhere."
       />
       {msg && <div className={`notice ${msg.ok ? 'ok' : 'error'} spaced`}>{msg.text}</div>}
+      <ReseedPanel />
       {cats.map((cat) => (
         <section key={cat}>
           <h2>{categoryNames[cat] ?? cat}</h2>

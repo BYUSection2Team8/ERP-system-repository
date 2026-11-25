@@ -279,7 +279,11 @@ export function NewReturnPage() {
                         </tr>
                       )}
                       <tr className="grand">
-                        <td>{Number(quote.refund_amount) >= 0 ? `Refund ${refundTo[quote.refund_to] ?? ''}` : 'Customer pays the difference'}</td>
+                        <td>{Number(quote.refund_amount) >= 0 ? `Refund ${refundTo[
+                          // A closed on-account order was already paid, so process_return refunds cash
+                          // (quote_return's refund_to still says 'account' for it).
+                          quote.refund_to === 'account' && o?.order.status === 'closed' ? 'cash' : quote.refund_to
+                        ] ?? ''}` : 'Customer pays the difference'}</td>
                         <td className="num">{money(Math.abs(Number(quote.refund_amount)))}</td>
                       </tr>
                     </tbody>

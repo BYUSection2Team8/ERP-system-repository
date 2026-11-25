@@ -27,6 +27,29 @@ Inventory, Returns & Exchanges, Production, Financials, MRP + 2–4 more capabil
   6. EmailJS free plan: 200 emails/month. Check the team Gmail's spam folder the first time.
 - [x] (done 2026-11-16) Supabase → Authentication → Sign In / Providers: "Allow new users to sign up" **on** and "Confirm email" **off** (needed for Create account; self sign-ups are always customers). New logins can also be made by staff in System → Users & access.
 
+## 0b. Database 2 (Demo) — a clean database for the presentation
+
+Database 1 (the current Supabase project) = **Practice**: rehearse freely, nothing to clean. Database 2 = **Demo**: built
+fresh, with the clearer demand patterns (migration 024), and only used during the demo. Database 1 is not changed.
+
+**Dry run now, real build on Dec 1** (the history always ends the day before it is generated; Dec 1 puts Black Friday in it).
+
+1. supabase.com → New project (free) → note its **Project URL** and **anon public key** (Project Settings → API).
+2. SQL Editor → paste **all of** `supabase/paste/1_setup_database.sql` (run `bash supabase/make_paste_files.sh` first) → Run.
+   If the last result says "HISTORY PARTLY GENERATED", paste `supabase/seed/002_customers_history.sql` and Run again until it says **HISTORY COMPLETE**.
+3. Paste `supabase/paste/2_run_checks.sql` → **ALL CHECKS PASSED** (includes the new PATTERN CHECKS).
+4. Authentication → Sign In / Providers: "Allow new users to sign up" on, "Confirm email" off (same as database 1).
+5. Authentication → Users → Add user (Auto Confirm) for the staff logins and `demo.customer@example.com`; then SQL Editor:
+   `update profiles set role = 'staff' where id in (select id from auth.users where email in ('...', '...'));` and `select link_customer_logins();`
+6. GitHub repo → Settings → Secrets and variables → Actions → add `VITE_SUPABASE_DEMO_URL` and `VITE_SUPABASE_DEMO_ANON_KEY` (database 2's values).
+   Actions → "Build and deploy to GitHub Pages" → Run workflow.
+7. On the site's sign-in page pick **Demo (database 2)**; the top bar shows a green "Demo DB" pill (yellow "Practice DB" on database 1).
+   Each device remembers its choice. Tracking links / QR codes carry `?db=…`, so a phone opens the right database.
+8. Rebuild on Dec 1: in database 2, Settings → **Reseed data through yesterday** (type RESEED) — wipes and regenerates the history
+   ending Nov 30 (~1–2 minutes, keep the page open). Logins, products and settings stay. Then set **System → Allow "Reseed data" = false**
+   so nobody can press it during the demo. (Demo morning: turn it on, reseed once more for a Dec 1 "yesterday", turn it off — optional.)
+9. Reports → **Demand patterns** shows the patterns by order date (weekday, game days, back to school, product life cycle, Thanksgiving week).
+
 ## 1. Live-site checklists (deferred from Phases 4–10)
 
 Run each phase's checklist in `HANDOFF.md`, on a laptop **and** a phone:
@@ -38,6 +61,26 @@ Run each phase's checklist in `HANDOFF.md`, on a laptop **and** a phone:
 - [ ] Phase 8 — Returns + Financials
 - [ ] Phase 9 — Reports + Portal + Realtime
 - [ ] Phase 10 — Order tracking, print failures, quotes, printer board, packing slip, capacity
+
+### Run of 2026-11-25 (AI in the browser pane, staff login demo.staff1)
+
+Staff-side steps passed unless listed in the bug log. Test data it made: SO-12562/12565/12566 (POS + Summit Ridge 25 keychains),
+SO-12563 (Rebecca, Temple, now shipped), SO-12564 (cancelled), SO-12568 (exchange), SO-12569 + MO-4395 (custom quote "Checklist test widget"),
+MO-4391/4393/4394 (Dragon 5+1 scrap, Temple failure + reprint), MO-4392 (Airplane 18, planned from MRP), PO-7174 (K&J, received + closed),
+RMA-5107/5109/5112, bill PO-7147 paid. Settings changed and put back: ordering cost 15 → 30 → 15.
+
+**Still needs a person** (not possible from one browser login):
+- Two users at once: Phase 4 #8, Phase 5 #6, Phase 9 #6 (live update on a second screen).
+- Portal as Demo Customer: Phase 9 #5–7, portal half of Phase 10 #7.
+- Hardware: QR scan with a phone (Phase 10 #1), USB/camera scan-to-receive (Phase 7 #4), "Print receipt prints only the receipt" (Phase 4 #2).
+- EmailJS arrival (Phase 10 #2): not set up; "not sent" logging works.
+
+**Not run** (would change settings or add permanent data): custom quote markup change (10 #7), capacity warning level (10 #10),
+New product design "Rocket" create (10 #12, page loads), spool load/unload/weigh (10 #13, page + reconciliation OK),
+demand simulator (10 #14), transfer capacity override (10 #15), zone shipping (10 #16), periodic review "Send POs" (7 #6, page OK),
+supplier lead-time edit (7 #1).
+
+**Phone (375 px)**: 33 pages loaded; production order detail and MRP scrolled sideways (fixed in code, see bug log). The rest fit.
 
 ## 2. Bug bash with unexpected inputs (Dr. Wright may try these)
 
@@ -90,4 +133,16 @@ cost of poor quality shows up on the P&L the moment a print fails.
 
 | # | Found by | Page | Steps to reproduce | Expected | Actual | Fixed? |
 |---|---|---|---|---|---|---|
-| | | | | | | |
+| 1 | AI 11-25 | Production order | Create and issue, then Complete in the same minute | Completes | "Finish time cannot be before the start time." (box sends 10:53:00, start was 10:53:xx) | Code: untouched time box sends the exact current time (also PO receipts). Needs deploy |
+| 2 | AI 11-25 | Production / sales / PO detail | Complete, cancel, fulfill, receive | Page shows the new status at once | Old status + buttons stay clickable ~5 s until Realtime catches up | Code: page reloads right after the action. Needs deploy |
+| 3 | AI 11-25 | New return | Return from a closed on-account order (SO-12565) | Preview says refund in cash (what posts) | Preview says "off the customer's account (A/R)"; journal correctly credits Cash | Code: label fixed in the screen. Needs deploy |
+| 4 | AI 11-25 | Production order detail, MRP (phone) | Open at 375 px | No sideways scroll | Page 427 / 385 px wide | Code: phone grid columns use minmax(0, 1fr). Needs deploy |
+| 5 | AI 11-25 | Everywhere | Search "Temple" | White only | Black/Blue/Red still sellable | Not a code bug: paste `023_temples_white_promo_codes.sql` in the SQL Editor |
+| 6 | AI 11-25 | Dashboard, Reports, Backorders | Look at the last 30 days | Steady daily sales | No sales Nov 12–22; 92 backorder lines, most "after need date" (history stopped Nov 16; nothing fulfilled since) | **Open** — needs a catch-up of the history to yesterday before the demo |
+| 7 | AI 11-25 | P&L | Nov column | Realized losses ≤ 0 | Inventory adjustments **+$308** (gain): someone's Nov 24 test adjusted Dragon - White +10,000 then −10,000; shrinks "cost of poor quality" | **Open** — data, decide: offsetting adjustment or leave |
+| 8 | AI 11-25 | Printer board | Queue | Real jobs | MO-4387 + MO-4388: duplicate 77-plate Fidget Spinner Blue (test data) add ~116 h and push quote ready dates out | **Open** — cancel them? |
+| 9 | AI 11-25 | Printer board / spools | AMS slots | 4 colors per printer | Printer 4 empty, 2–3 partly; 0 spools in stock, Black only 701 g | Demo prep: receive a Hobby Lobby filament PO into the Print Farm |
+| 10 | AI 11-25 | Sales order | Cancel with empty reason | Reason required (checklist says "with a reason") | Cancels with no reason | Open (polish) |
+| 11 | AI 11-25 | Sales order (backordered) | SO-12563 before production | Backorder + est. date on the order | Badge "Backordered" but card says "All lines are in stock… Fulfill (ship)" (on-hand units are promised to older orders); est. date only on Backorders page | Open (polish) |
+| 12 | AI 11-25 | Suppliers | Scorecard | Every supplier has history | Target: no POs | Open (minor) |
+| 13 | AI 11-25 | Print failures report | By reason | Useful denominator | "Orders with failures 20 of 20" | Open (minor) |

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useAuth } from './AuthProvider';
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { Logo } from '../../app/Logo';
+import { DatabaseSwitch } from '../../app/DatabaseSwitch';
 
 // Sign in, or create a CUSTOMER account. Staff accounts are only made by staff
 // (System -> Users & access): the site is public, so nobody can sign up as staff.
@@ -72,6 +73,8 @@ export function LoginPage() {
             <p className="muted">{signup ? 'Create a customer account' : 'Sign in'}</p>
           </div>
         </div>
+
+        <DatabaseSwitch />
 
         {!isSupabaseConfigured && (
           <div className="notice warn">

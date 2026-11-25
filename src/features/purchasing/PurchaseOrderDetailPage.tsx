@@ -51,10 +51,10 @@ function dayDiff(a: string, b: string): number {
 
 export function PurchaseOrderDetailPage() {
   const { id = '' } = useParams();
-  const { data, error, loading } = useLiveQuery(() => load(id), ['purchase_orders', 'purchase_order_lines', 'po_receipts', 'supplier_payments', 'ledger'], [id]);
+  const { data, error, loading, reload } = useLiveQuery(() => load(id), ['purchase_orders', 'purchase_order_lines', 'po_receipts', 'supplier_payments', 'ledger'], [id]);
   const [recv, setRecv] = useState<Record<string, string>>({});
   const [loc, setLoc] = useState('');
-  const [at, setAt] = useState(nowLocalInput());
+  const [at, setAt] = useState(''); // '' = now (exact time sent, so a same-minute receipt is never "before the order")
   const [allowOver, setAllowOver] = useState(false);
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -78,6 +78,7 @@ export function PurchaseOrderDetailPage() {
     setResult(null);
     try {
       await rpc(fn, args);
+      await reload(); // show the new status at once instead of waiting for Realtime
       setResult({ ok: true, text: done });
       setRecv({});
       setNotes('');
@@ -168,7 +169,7 @@ export function PurchaseOrderDetailPage() {
                 p_po_id: po.id,
                 p_lines: toReceive.map((l) => ({ po_line_id: l.id, qty: recvQty(l) })),
                 p_location: receiveLoc,
-                p_at: new Date(at).toISOString(),
+                p_at: (at === '' ? new Date() : new Date(at)).toISOString(),
                 p_allow_over: allowOver,
                 p_notes: notes.trim() || null,
               },
@@ -217,7 +218,7 @@ export function PurchaseOrderDetailPage() {
             </label>
             <label>
               Received at
-              <input type="datetime-local" value={at} onChange={(e) => setAt(e.target.value)} />
+              <input type="datetime-local" value={at || nowLocalInput()} onChange={(e) => setAt(e.target.value)} />
             </label>
             <label className="grow">
               Notes
