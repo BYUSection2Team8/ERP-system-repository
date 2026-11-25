@@ -1146,7 +1146,7 @@ begin
    where item_type = 'finished' and not is_active
      and not (product_family = 'Temple LED Tealight' and color is distinct from 'White');
 
-  delete from customers;
+  delete from customers where id is not null;  -- Supabase rejects DELETE without WHERE from the API
   delete from settings where key in ('history_start_date', 'history_generated_through', 'history_complete');
 
   alter sequence so_no_seq restart;  alter sequence rma_no_seq restart; alter sequence mo_no_seq restart;
