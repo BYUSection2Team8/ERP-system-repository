@@ -1219,13 +1219,13 @@ begin
                     'game', round(sum(qty) filter (where g and color = 'Blue') / nullif(sum(qty) filter (where g), 0), 3),
                     'other', round(sum(qty) filter (where not g and color = 'Blue') / nullif(sum(qty) filter (where not g), 0), 3))
                    from (select l.*, sim.h_game_day(l.d) as g from l where l.fam = 'BYU Logo') x),
-    'events', (select jsonb_agg(jsonb_build_object('label', e.label, 'date', e.d, 'orders', dd.orders,
+    'events', coalesce((select jsonb_agg(jsonb_build_object('label', e.label, 'date', e.d, 'orders', dd.orders,
                     'november_avg', (select round(avg(orders), 2) from daily
                                       where extract(month from daily.d) = 11 and daily.d not between v_bf - 1 and v_bf + 3))
                     order by e.k)
                  from (values ('Thanksgiving', v_bf - 1, 1), ('Black Friday', v_bf, 2),
                               ('Saturday after', v_bf + 1, 3), ('Cyber Monday', v_bf + 3, 4)) as e(label, d, k)
-                 join daily dd on dd.d = e.d),
+                 join daily dd on dd.d = e.d), '[]'::jsonb),
     'daily', (select jsonb_agg(jsonb_build_object('d', d, 'orders', orders, 'sales', sales) order by d) from daily)
   ) into v;
   return v;

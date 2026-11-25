@@ -78,8 +78,8 @@ begin
   end if;
 
   -- Thanksgiving week, when it is inside the history.
-  v_bf := (select (e2->>'date')::date from jsonb_array_elements(coalesce(p->'events', '[]')) e2 where e2->>'label' = 'Black Friday');
-  for e in select * from jsonb_array_elements(coalesce(p->'events', '[]')) loop
+  v_bf := (select (e2->>'date')::date from jsonb_array_elements(case when jsonb_typeof(p->'events') = 'array' then p->'events' else '[]'::jsonb end) e2 where e2->>'label' = 'Black Friday');
+  for e in select * from jsonb_array_elements(case when jsonb_typeof(p->'events') = 'array' then p->'events' else '[]'::jsonb end) loop
     if e->>'label' = 'Black Friday' then
       assert (e->>'orders')::numeric >= 2 * (e->>'november_avg')::numeric, format('Black Friday %s orders vs November avg %s', e->>'orders', e->>'november_avg');
     elsif e->>'label' = 'Thanksgiving' then
