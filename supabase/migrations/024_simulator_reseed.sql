@@ -220,11 +220,11 @@ create or replace function sim.h_rule(p_fam text, p_d date, out ff_target int, o
 language plpgsql immutable as $$
 begin
   ff_target := 0; ff_rop := 0; cp_target := 0;
-  if p_fam = 'DRG' then ff_target := 14; ff_rop := 8;  cp_target := 6;
-  elsif p_fam = 'SPN' then ff_target := 10; ff_rop := 6; cp_target := 5;
-  elsif p_fam = 'KEY' then ff_target := 60; ff_rop := 30; cp_target := 20;
+  if p_fam = 'DRG' then ff_target := 24; ff_rop := 14; cp_target := 10;
+  elsif p_fam = 'SPN' then ff_target := 16; ff_rop := 10; cp_target := 8;
+  elsif p_fam = 'KEY' then ff_target := 100; ff_rop := 50; cp_target := 40;
   elsif p_fam = 'ORN' and (to_char(p_d, 'MM-DD') between '10-12' and '12-20') then
-    ff_target := 24; ff_rop := 10; cp_target := 8;
+    ff_target := 38; ff_rop := 16; cp_target := 13;
   end if;
 end;
 $$;
