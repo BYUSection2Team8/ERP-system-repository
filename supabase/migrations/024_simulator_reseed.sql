@@ -12,7 +12,7 @@
 -- Clearer patterns than before (the old model hid them under daily noise):
 --   * ~1.6x the order volume, so day-to-day noise no longer swamps the effects;
 --   * strong weekday pattern by ORDER date (Sun/Mon peak, Saturday low);
---   * 5%/month growth; BYU home games x2.2 for students and local families with
+--   * 5%/month growth; BYU home games x2.8 for students and local families with
 --     blue BYU logos surging; Thanksgiving dip, Black Friday x3 (gift buyers x4),
 --     the weekend after x1.8, Cyber Monday x2.2;
 --   * product life cycle: Dragons rising, Fidget Spinners fading;
@@ -143,7 +143,7 @@ declare
   v numeric := 1;
   v_bf date := sim.h_black_friday(p_d);
 begin
-  if sim.h_game_day(p_d) and p_seg in ('student', 'local_family') then v := v * 2.2; end if;
+  if sim.h_game_day(p_d) and p_seg in ('student', 'local_family') then v := v * 2.8; end if;
   if p_d = v_bf - 1 then v := v * 0.3;                                              -- Thanksgiving Day
   elsif p_d = v_bf then v := v * case when p_seg = 'gift_buyer' then 4 else 3 end;  -- Black Friday
   elsif p_d between v_bf + 1 and v_bf + 2 then v := v * 1.8;                        -- the weekend after
@@ -171,7 +171,7 @@ declare
   v_orn boolean := extract(month from p_d) in (11, 12);
   v_game boolean := sim.h_game_day(p_d);
   v_age numeric := sim.h_age(p_d);
-  v_drg numeric := 1 + 0.15 * v_age;                   -- Dragons catch on
+  v_drg numeric := 1 + 0.4 * v_age;                    -- Dragons catch on
   v_spn numeric := greatest(0.15, 1 - 0.17 * v_age);   -- the fidget-spinner fad fades
 begin
   return case p_seg
@@ -194,7 +194,7 @@ begin
   if p_fam = 'KEY' then return 'BW'; end if;
   if p_fam = 'AIR' then return 'MC'; end if;
   return sim.h_pick(array['RED','WHITE','BLUE','BLACK'], case p_fam
-    when 'BYU' then array[10, 20, case when v_game then 85 else 50 end, 15]
+    when 'BYU' then array[10, 20, case when v_game then 140 else 35 end, 15]
     when 'TMP' then array[15, 50, 20, 15]
     when 'ARM' then array[20, 15, 20, 45]
     when 'DRG' then array[30, 15, 30, 25]
@@ -384,7 +384,7 @@ declare
   v_weekday boolean := extract(dow from d)::int between 1 and 5;
   v_trend numeric := power(1.05::numeric, ((d - v_start) / 30.0)::numeric);
   v_orn boolean := extract(month from d) in (11, 12);
-  v_drg_lc numeric := 1 + 0.15 * sim.h_age(d);                 -- product life cycle (see sim.h_family)
+  v_drg_lc numeric := 1 + 0.4 * sim.h_age(d);                  -- product life cycle (see sim.h_family)
   v_spn_lc numeric := greatest(0.15, 1 - 0.17 * sim.h_age(d));
   r record;
   it record;

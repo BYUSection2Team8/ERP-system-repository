@@ -52,7 +52,14 @@ export function PatternsReport() {
   const months = [...new Set((data?.monthly ?? []).map((m) => m.month))].sort();
   const segs = segOrder.filter((s) => (data?.monthly ?? []).some((m) => m.segment === s));
   const cell = (month: string, seg: string) => data?.monthly?.find((m) => m.month === month && m.segment === seg)?.orders ?? 0;
-  const famMonths = [...new Set((data?.families ?? []).map((f) => f.month))].sort();
+  // Life cycle: only months fully inside the range (a 5-day first month or a
+  // half-finished last month would make the comparison misleading).
+  const fullMonth = (m: string) => {
+    const [y, mo] = m.split('-').map(Number);
+    const days = new Date(Date.UTC(y, mo, 0)).getUTCDate(); // last day of month mo
+    return `${m}-01` >= from && `${m}-${String(days).padStart(2, '0')}` <= to;
+  };
+  const famMonths = [...new Set((data?.families ?? []).map((f) => f.month))].sort().filter(fullMonth);
   const share = (month: string, fam: string) => {
     const rows = (data?.families ?? []).filter((f) => f.month === month);
     const total = rows.reduce((s, r) => s + Number(r.units), 0);
