@@ -172,7 +172,7 @@ declare
   v_game boolean := sim.h_game_day(p_d);
   v_age numeric := sim.h_age(p_d);
   v_drg numeric := 1 + 0.15 * v_age;                   -- Dragons catch on
-  v_spn numeric := greatest(0.25, 1 - 0.12 * v_age);   -- the fidget-spinner fad fades
+  v_spn numeric := greatest(0.15, 1 - 0.17 * v_age);   -- the fidget-spinner fad fades
 begin
   return case p_seg
     when 'student' then sim.h_pick(array['KEY','BYU','SPN','DRG','ORN','MAG'],
@@ -384,6 +384,8 @@ declare
   v_weekday boolean := extract(dow from d)::int between 1 and 5;
   v_trend numeric := power(1.05::numeric, ((d - v_start) / 30.0)::numeric);
   v_orn boolean := extract(month from d) in (11, 12);
+  v_drg_lc numeric := 1 + 0.15 * sim.h_age(d);                 -- product life cycle (see sim.h_family)
+  v_spn_lc numeric := greatest(0.15, 1 - 0.17 * sim.h_age(d));
   r record;
   it record;
   v_id uuid;
@@ -621,10 +623,10 @@ begin
     v_last := coalesce(v_last, v_start - sim.h_hash(r.id::text, 'b0') % 25);
     continue when not v_weekday or d - v_last < 22 + sim.h_hash(r.id::text || v_last::text, 'int') % 16;
     v_map := jsonb_build_object('KEY-BW', 30 + 5 * floor(random() * 7)::int);
-    if random() < 0.5 then
+    if random() < 0.5 * v_spn_lc then
       v_map := v_map || jsonb_build_object('SPN-' || sim.h_color('SPN', d), 10 + floor(random() * 11)::int);
     end if;
-    if random() < 0.4 then
+    if random() < least(0.9, 0.4 * v_drg_lc) then
       v_map := v_map || jsonb_build_object('DRG-' || sim.h_color('DRG', d), 8 + floor(random() * 9)::int);
     end if;
     if v_orn and to_char(d, 'MM-DD') <= '12-10' then
@@ -645,7 +647,7 @@ begin
     for v_k in 1 .. v_n loop
       v_map := '{}'::jsonb;
       for v_j in 1 .. 1 + (random() < 0.25)::int loop
-        v_fam := sim.h_pick(array['KEY','DRG','SPN','ORN'], array[45, 25, 20, case when v_orn then 30 else 0 end]::numeric[]);
+        v_fam := sim.h_pick(array['KEY','DRG','SPN','ORN'], array[45, 25 * v_drg_lc, 20 * v_spn_lc, case when v_orn then 30 else 0 end]::numeric[]);
         v_sku := v_fam || '-' || sim.h_color(v_fam, d);
         v_map := v_map || jsonb_build_object(v_sku, coalesce((v_map ->> v_sku)::int, 0) + 1 + (v_fam = 'KEY' and random() < 0.3)::int);
       end loop;
