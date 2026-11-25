@@ -1,10 +1,12 @@
 import { errorMessage, rpc } from '../../lib/db';
+import { dbChoice, hasDatabaseChoice } from '../../lib/supabase';
 
 // Live order tracking (wow factor #1): private link + QR code + email.
 
-/** Public tracking page for a token. Works without signing in. */
+/** Public tracking page for a token. Works without signing in. Carries the
+ *  database (?db=) when there are two, so a phone opens the right one. */
 export function trackingUrl(token: string): string {
-  return `${window.location.origin}${window.location.pathname}#/track/${token}`;
+  return `${window.location.origin}${window.location.pathname}#/track/${token}${hasDatabaseChoice ? `?db=${dbChoice}` : ''}`;
 }
 
 const emailjs = {

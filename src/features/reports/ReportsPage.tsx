@@ -9,6 +9,7 @@ import { addDays, localToday, pctText } from '../production/productionShared';
 import { loadReorderPlan, n, reorderTables, type ReorderRow } from '../purchasing/reorderShared';
 import { BarChart, DateRange, shortDate } from './reportsShared';
 import { ShowMath } from '../../app/ShowMath';
+import { PatternsReport } from './PatternsReport';
 
 // Manager reports (rubric capability 10). Every figure comes from a database
 // function or view over stored transactions, and reloads live.
@@ -20,6 +21,7 @@ const tabs = [
   { key: 'location', label: 'Inventory by location' },
   { key: 'suppliers', label: 'Supplier performance' },
   { key: 'failures', label: 'Print failures' },
+  { key: 'patterns', label: 'Demand patterns' },
 ] as const;
 type TabKey = (typeof tabs)[number]['key'];
 
@@ -58,6 +60,7 @@ export function ReportsPage() {
       {tab === 'location' && <StockByLocationReport />}
       {tab === 'suppliers' && <SupplierPerformanceReport />}
       {tab === 'failures' && <FailureReport from={from} to={to} range={range} />}
+      {tab === 'patterns' && <PatternsReport />}
     </div>
   );
 }

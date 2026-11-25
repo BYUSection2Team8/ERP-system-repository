@@ -16,7 +16,7 @@ const journalNames: Record<string, string> = {
 
 export function SalesOrderDetailPage() {
   const { id = '' } = useParams();
-  const { data, error, loading } = useOrder(id);
+  const { data, error, loading, reload } = useOrder(id);
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [cancelling, setCancelling] = useState(false);
@@ -32,6 +32,7 @@ export function SalesOrderDetailPage() {
     setResult(null);
     try {
       await rpc(fn, args);
+      await reload(); // show the new status at once instead of waiting for Realtime
       setResult({ ok: true, text: done });
       setCancelling(false);
     } catch (e) {

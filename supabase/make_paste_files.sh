@@ -27,6 +27,7 @@ checks=(
   supabase/tests/shipping_zones_check.sql
   supabase/tests/accounts_check.sql
   supabase/tests/promo_check.sql
+  supabase/tests/patterns_check.sql
 )
 
 {

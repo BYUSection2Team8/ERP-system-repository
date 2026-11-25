@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../../app/Logo';
 import { LiveIndicator } from '../../app/LiveIndicator';
+import { DatabaseSwitch } from '../../app/DatabaseSwitch';
 import { ErrorNotice, Loading } from '../../app/ui';
 import { errorMessage, rpc } from '../../lib/db';
 import { date, dateTime, money } from '../../lib/format';
@@ -58,6 +59,7 @@ export function CustomerHome() {
           <NavLink to="/orders">My orders</NavLink>
         </nav>
         <div className="who">
+          <DatabaseSwitch compact />
           <LiveIndicator />
           <span>{customer?.name ?? fullName ?? session?.user.email}</span>
           <button className="btn" onClick={signOut}>Sign out</button>

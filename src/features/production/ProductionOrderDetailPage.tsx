@@ -56,14 +56,17 @@ async function load(id: string): Promise<View> {
 
 export function ProductionOrderDetailPage() {
   const { id = '' } = useParams();
-  const { data, error, loading } = useLiveQuery(() => load(id), ['production_orders', 'production_order_components', 'inventory_txn', 'ledger'], [id]);
+  const { data, error, loading, reload } = useLiveQuery(() => load(id), ['production_orders', 'production_order_components', 'inventory_txn', 'ledger'], [id]);
   const ref = useProductionRefData();
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
-  const [startAt, setStartAt] = useState(nowLocalInput());
+  // '' = "now": the box shows the current minute, but the exact current time is sent, so
+  // completing in the same minute as the start is not refused as "before the start time".
+  const [startAt, setStartAt] = useState('');
   const [good, setGood] = useState('');
   const [scrapReason, setScrapReason] = useState('');
-  const [finishAt, setFinishAt] = useState(nowLocalInput());
+  const [finishAt, setFinishAt] = useState('');
+  const atIso = (v: string) => (v === '' ? new Date() : new Date(v)).toISOString();
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
@@ -77,6 +80,7 @@ export function ProductionOrderDetailPage() {
     setResult(null);
     try {
       await rpc(fn, args);
+      await reload(); // show the new status at once instead of waiting for Realtime
       setResult({ ok: true, text: done });
       setCancelling(false);
     } catch (e) {
@@ -130,12 +134,12 @@ export function ProductionOrderDetailPage() {
           <div className="page-actions">
             <label className="inline">
               Start time
-              <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
+              <input type="datetime-local" value={startAt || nowLocalInput()} onChange={(e) => setStartAt(e.target.value)} />
             </label>
             <button
               className="btn primary"
               disabled={busy !== null || short.length > 0}
-              onClick={() => act('issue', 'issue_production_order', { p_mo_id: mo.id, p_at: new Date(startAt).toISOString() }, `${mo.mo_no} issued: components consumed, order in progress.`)}
+              onClick={() => act('issue', 'issue_production_order', { p_mo_id: mo.id, p_at: atIso(startAt) }, `${mo.mo_no} issued: components consumed, order in progress.`)}
             >
               {busy === 'issue' ? 'Issuing…' : 'Issue components & start'}
             </button>
@@ -166,7 +170,7 @@ export function ProductionOrderDetailPage() {
             void act(
               'complete',
               'complete_production_order',
-              { p_mo_id: mo.id, p_qty_good: goodN, p_qty_scrap: scrapN, p_scrap_reason: needReason ? scrapReason : null, p_at: new Date(finishAt).toISOString() },
+              { p_mo_id: mo.id, p_qty_good: goodN, p_qty_scrap: scrapN, p_scrap_reason: needReason ? scrapReason : null, p_at: atIso(finishAt) },
               `${mo.mo_no} completed: ${goodN} good received into ${data.output.name}${scrapN > 0 ? `, ${scrapN} scrapped` : ''}.`,
             );
           }}
@@ -195,7 +199,7 @@ export function ProductionOrderDetailPage() {
             </label>
             <label>
               Finish time
-              <input type="datetime-local" value={finishAt} onChange={(e) => setFinishAt(e.target.value)} />
+              <input type="datetime-local" value={finishAt || nowLocalInput()} onChange={(e) => setFinishAt(e.target.value)} />
             </label>
           </div>
           <div className="page-actions">

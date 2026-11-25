@@ -58,6 +58,9 @@ jobs:
       - name: History check (60 customers, 6 months of derived history, Phase 6)
         run: bash supabase/tests/run_sql.sh supabase/tests/history_check.sql
 
+      - name: Demand patterns check (weekday, game days, life cycle, Printer 3)
+        run: bash supabase/tests/run_sql.sh supabase/tests/patterns_check.sql
+
       - name: Smoke test (every business function, numbers checked)
         run: bash supabase/tests/run_sql.sh supabase/tests/smoke_core.sql
 
@@ -108,6 +111,15 @@ jobs:
 
       - name: Promo codes + white-only Temples check
         run: bash supabase/tests/run_sql.sh supabase/tests/promo_check.sql
+
+      # Last on this database: the website's "Reseed data through yesterday" wipes and
+      # regenerates everything, then the data checks run again on the new history.
+      - name: Reseed through yesterday (website button), then re-check
+        run: |
+          bash supabase/tests/run_sql.sh supabase/tests/reseed_check.sql || exit 1
+          for f in seed_check history_check patterns_check financials_check spools_check; do
+            bash supabase/tests/run_sql.sh supabase/tests/$f.sql || exit 1
+          done
 
       # The SQL Editor sends a whole paste as ONE batch, so test the paste files that way
       # on a second, empty database.

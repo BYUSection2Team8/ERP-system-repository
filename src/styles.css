@@ -292,7 +292,7 @@ fieldset.discount legend { font-size: 0.9rem; font-weight: 600; padding: 0 0.3re
   .nav-section { margin-bottom: 0.25rem; }
   .content { padding: 1rem 16px; }
   .topbar { padding: 0.5rem 16px; }
-  .detail-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: minmax(0, 1fr); }
   .form-row label { min-width: 0; flex: 1 1 100%; }
   .toolbar .filter { width: 100%; }
   .label-sheet { transform-origin: top left; }
@@ -320,7 +320,7 @@ label.inline { flex-direction: row; align-items: center; gap: 0.4rem; font-weigh
 .math { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; color: var(--muted); }
 .settings-grid input { width: 9rem; }
 @media (max-width: 720px) {
-  .supplier-cards { grid-template-columns: 1fr; }
+  .supplier-cards { grid-template-columns: minmax(0, 1fr); }
 }
 .table tr.row-alert td { background: #fffaf0; }
 .totals.pl td.indent { padding-left: 1.2rem; }
@@ -429,3 +429,14 @@ a.sidebar-brand, .portal-top a.brand { color: inherit; text-decoration: none; }
 a.sidebar-brand:hover span, .portal-top a.brand:hover span { text-decoration: underline; }
 .promo-row { display: flex; gap: 0.4rem; align-items: flex-end; flex-wrap: wrap; }
 .promo-row input { width: 10rem; text-transform: uppercase; }
+
+/* Practice / Demo database switch */
+fieldset.db-switch { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem 0.8rem 0.7rem; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+fieldset.db-switch legend { font-size: 0.9rem; font-weight: 600; padding: 0 0.3rem; }
+fieldset.db-switch .choice { display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 500; }
+fieldset.db-switch .choice.selected { font-weight: 700; }
+.db-switch.compact select { font-size: 0.8rem; padding: 0.2rem 0.4rem; border-radius: 99px; font-weight: 600; }
+.db-switch.compact.practice select { background: #fff4d6; color: #7a5500; border-color: #e8c66a; }
+.db-switch.compact.demo select { background: #dcf5ef; color: #17714f; border-color: #8fd3bd; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+.pattern-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 1rem; }
